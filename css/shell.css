@@ -83,6 +83,7 @@ body:has(.p-shell.drawer-open) .demo-fab { display: none; }
 .demo-group h3 { font: var(--t-label); color: var(--c-text-3); }
 .demo-actions { display: grid; grid-template-columns: 1fr; gap: var(--s-2); }
 @media (min-width: 480px) { .demo-actions { grid-template-columns: 1fr 1fr; } }
+.demo-prototype-actions { grid-template-columns: 1fr; }
 .demo-actions .btn { justify-content: flex-start; border-radius: var(--r-md); --btn-h: 44px; padding: 0 var(--s-4); }
 .demo-actions .btn:focus-visible { border-radius: var(--r-md); }
 

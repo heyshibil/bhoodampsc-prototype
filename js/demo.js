@@ -38,9 +38,7 @@
       </div>
       <div class="demo-group">
         <h3>Prototype</h3>
-        <div class="demo-actions">
-          <button type="button" class="btn btn--secondary btn--sm" data-act="defaults">${icon('file-text')}View demo defaults</button>
-          <button type="button" class="btn btn--secondary btn--sm" data-act="gallery">${icon('palette')}Component gallery</button>
+        <div class="demo-actions demo-prototype-actions">
           <button type="button" class="btn btn--danger btn--sm" data-act="reset">${icon('refresh')}Reset demo data</button>
         </div>
       </div>`;
@@ -93,8 +91,6 @@
           if (hooks.push && hooks.push()) return;
           BP.ui.toast('Push-style alerts are added with notifications in Phase 4.');
         },
-        defaults() { openDefaults(); },
-        gallery(el, e, api) { api.close(true); BP.router.go('/styleguide'); },
         async reset(el, e, api) {
           const ok = await BP.ui.confirm({
             title: 'Reset demo data?',
@@ -107,14 +103,6 @@
           BP.ui.toast('Demo data has been reset', { type: 'success' });
         },
       },
-    });
-  }
-
-  function openDefaults() {
-    BP.ui.sheet({
-      title: 'Demo defaults and assumptions',
-      size: 'xl',
-      body: html`<div class="md">${BP.ui.markdown(BP.decisionsMarkdown || 'Not available.')}</div>`,
     });
   }
 
