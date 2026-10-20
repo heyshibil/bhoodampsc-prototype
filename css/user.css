@@ -1,0 +1,121 @@
+/* User app shell.
+   Phones (< 768):        slim top bar (logo + alerts bell) + bottom tab bar.
+   Tablets (768–1099):    icon rail on the left (icon + short label), no top bar.
+   Desktop (>= 1100):     full sidebar (logo, labelled menu groups, premium card).
+   Menu items come from one list in js/user/shell.js, so new destinations slot into every layout. */
+.u-shell { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; padding-left: var(--w-uside); }
+
+/* ---------- Top bar (phones only) ---------- */
+.u-top {
+  position: sticky; top: 0; z-index: var(--z-nav);
+  background: var(--c-surface-glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--c-border);
+}
+.u-top-inner { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); height: var(--h-topbar); }
+.u-top .logo-mark { width: 32px; height: 32px; }
+.u-top .logo-word { font-size: 18px; }
+
+.u-main { flex: 1 1 auto; width: 100%; padding-top: var(--s-5); padding-bottom: calc(var(--h-bottomnav) + var(--s-10) + env(safe-area-inset-bottom)); }
+
+/* ---------- Bottom tab bar (phones only) ---------- */
+.u-bottom {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-nav);
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  height: calc(var(--h-bottomnav) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
+  background: var(--c-surface); box-shadow: var(--sh-nav);
+}
+.u-bottom a {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  color: var(--c-text-3); font: var(--t-label); text-decoration: none; position: relative;
+}
+.u-bottom a:hover { color: var(--c-text); text-decoration: none; }
+.u-bottom a[aria-current="page"] { color: var(--c-primary); }
+.u-bottom a:focus-visible { box-shadow: none; }
+.u-bottom a:focus-visible .nav-ic { box-shadow: var(--ring); }
+
+/* Shared icon pill (bottom bar + rail) */
+.nav-ic {
+  position: relative; display: grid; place-items: center; width: 56px; height: 32px; border-radius: var(--r-pill);
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.nav-ic svg { width: 22px; height: 22px; }
+.nav-ic .badge { position: absolute; top: -4px; right: 6px; border: 2px solid var(--c-surface); height: 20px; min-width: 20px; }
+[aria-current="page"] > .nav-ic { background: var(--c-primary); color: var(--c-white); }
+
+/* ---------- Sidebar / rail ---------- */
+.u-side { display: none; }
+.u-side-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--c-text); }
+.u-side-brand:hover { text-decoration: none; }
+.u-side-brand:focus-visible { border-radius: var(--r-md); }
+.u-side-nav { display: flex; flex-direction: column; gap: var(--s-2); }
+.u-side-label { padding: 0 var(--s-2) var(--s-1); font: 600 13px/18px var(--f-sans); color: var(--c-text-3); }
+.u-side-item { position: relative; display: flex; align-items: center; text-decoration: none; color: var(--c-text-2); }
+.u-side-item:hover { text-decoration: none; color: var(--c-text); }
+.u-side-foot { margin-top: auto; display: flex; flex-direction: column; gap: var(--s-3); width: 100%; }
+/* Log out sits at the very bottom, under a divider */
+.u-side-sep { height: 1px; background: var(--c-border); }
+.u-side-logout { width: 100%; border: 0; background: transparent; cursor: pointer; }
+.u-rail-premium { display: none; }
+
+/* Rail: tablets */
+@media (min-width: 768px) {
+  :root { --w-uside: var(--w-urail); }
+  .u-top, .u-bottom { display: none; }
+  .u-main { padding-top: var(--s-8); padding-bottom: var(--s-16); }
+  .u-side {
+    position: fixed; inset: 0 auto 0 0; z-index: var(--z-nav); width: var(--w-uside);
+    display: flex; flex-direction: column; align-items: center; gap: var(--s-6);
+    padding: var(--s-5) var(--s-2) var(--s-4); background: var(--c-surface); border-right: 1px solid var(--c-border); overflow-y: auto;
+  }
+  .u-side-brand .logo-mark { width: 40px; height: 40px; }
+  .u-side-brand .logo-word, .u-side-label, .u-side-promo, .u-side-plan { display: none; }
+  .u-side-foot { align-items: center; }
+  .u-side-nav { align-items: center; gap: var(--s-3); width: 100%; }
+  .u-side-item { flex-direction: column; gap: 4px; width: 100%; padding: 4px 0; font: var(--t-label); }
+  .u-side-item:focus-visible { box-shadow: none; }
+  .u-side-item:focus-visible .nav-ic { box-shadow: var(--ring); }
+  .u-side-item:hover .nav-ic { background: var(--c-surface-muted); }
+  .u-side-item[aria-current="page"] { color: var(--c-primary); }
+  .u-side-item[aria-current="page"]:hover .nav-ic { background: var(--c-primary); }
+  /* Rail: premium is a single violet crown tile (a button for free users, a status mark for members) */
+  .u-rail-premium { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-md); background: var(--c-accent-50); color: var(--c-accent); border: 1px solid var(--c-accent-200); }
+  .u-rail-premium svg { width: 20px; height: 20px; }
+  button.u-rail-premium:hover { background: var(--c-accent-200); }
+  button.u-rail-premium:focus-visible { border-radius: var(--r-md); }
+  .u-side-sep { width: 40px; }
+}
+
+/* Full sidebar: desktop */
+@media (min-width: 1100px) {
+  :root { --w-uside: var(--w-sidebar); }
+  .u-side { align-items: stretch; gap: var(--s-6); padding: var(--s-6) var(--s-4) var(--s-4); }
+  .u-side-brand { padding: 0 var(--s-2); }
+  .u-side-brand .logo-mark { width: 36px; height: 36px; }
+  .u-side-brand .logo-word { display: inline; font-size: 20px; }
+  .u-side-label { display: block; }
+  .u-side-nav { align-items: stretch; }
+  /* Same item style as the Creator / Admin sidebar for one consistent product */
+  .u-side-item {
+    flex-direction: row; gap: var(--s-3); min-height: 48px; padding: 0 var(--s-4);
+    border-radius: var(--r-md); background: var(--c-surface-muted); font: 500 15px/20px var(--f-sans);
+    transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+  .u-side-item:hover { background: var(--c-border); }
+  .u-side-item:focus-visible { border-radius: var(--r-md); box-shadow: var(--ring); }
+  .u-side-item .nav-ic { width: auto; height: auto; background: none !important; color: inherit; }
+  .u-side-item .nav-ic svg { width: 20px; height: 20px; }
+  .u-side-item .nav-ic .badge { display: none; }
+  .u-side-item .side-count { margin-left: auto; }
+  .u-side-item[aria-current="page"] { background: var(--c-primary); color: var(--c-white); font-weight: 600; }
+  .u-side-item[aria-current="page"]:hover { background: var(--c-primary-hover); }
+  .u-side-item[aria-current="page"] .badge { background: var(--c-white); color: var(--c-primary); }
+  .u-side-foot { align-items: stretch; }
+  .u-side-promo { display: flex; }
+  .u-side-plan { display: inline-flex; align-self: flex-start; height: 32px; padding: 0 var(--s-3); font-size: 13px; }
+  .u-rail-premium { display: none; }
+  .u-side-sep { width: auto; }
+  /* Log out reads as a quiet row, like the Creator / Admin sidebar footer */
+  .u-side-item.u-side-logout { background: transparent; }
+  .u-side-item.u-side-logout:hover { background: var(--c-surface-muted); }
+}
+@media (max-width: 1099.98px) { .u-side-item .side-count { display: none; } }

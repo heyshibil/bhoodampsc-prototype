@@ -1,0 +1,18 @@
+/* Premium: one quiet treatment built from the product's premium colour (the violet accent).
+   - .btn--premium   the upgrade button: same pill as every button, in premium violet, with a crown
+   - .tag--premium   the member badge (defined in components.css)
+   - .premium-card   a light violet panel for upsell or plan status (sidebar, Profile) */
+
+.btn--premium { background: var(--c-accent); color: var(--c-white); }
+.btn--premium:hover { background: var(--c-accent-hover); }
+.btn--premium:active { background: var(--c-accent-press); }
+
+.premium-card {
+  display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4);
+  border-radius: var(--r-lg); background: var(--c-accent-50); border: 1px solid var(--c-accent-200);
+}
+.premium-card-head { display: flex; align-items: center; gap: var(--s-3); }
+.premium-card .icon-tile { background: var(--c-surface); }
+.premium-card-title { font: var(--t-h3); color: var(--c-text); }
+.premium-card p { font: var(--t-caption); color: var(--c-text-2); }
+.premium-card .btn { --btn-h: 40px; }

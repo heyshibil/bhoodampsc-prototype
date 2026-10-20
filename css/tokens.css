@@ -1,0 +1,147 @@
+/* BoodhamPSC design tokens. Source: docs/DESIGN_SYSTEM.md. Components use these only. */
+:root {
+  /* Brand */
+  --c-primary: #0A4FDC;
+  --c-primary-hover: #0843BD;
+  --c-primary-press: #07379C;
+  --c-primary-50: #EEF3FE;
+  --c-primary-100: #E1EAFD;
+  --c-primary-200: #BED3FC;
+  --c-brand-light: #3A74F7;
+  --c-accent: #6A3DED;
+  --c-accent-50: #F1ECFE;
+  --c-accent-200: #D5C8FB;
+  --g-cta: linear-gradient(90deg, #7A3CF0 0%, #214DE3 100%);
+  --g-hero: linear-gradient(135deg, #BED3FC 0%, #DCE8FD 100%);
+  --g-brand: linear-gradient(140deg, #2A62F0 0%, #0A4FDC 45%, #6A3DED 100%);
+
+  /* Neutrals */
+  --c-bg: #F5F7F7;
+  --c-surface: #FFFFFF;
+  --c-surface-muted: #F4F5F5;
+  --c-border: #E7E9EC;
+  --c-border-strong: #D3D6DB;
+  --c-text: #0B0C0E;
+  --c-text-2: #4A4E55;
+  --c-text-3: #6E737B;
+  --c-ink: #1F2125;
+  --c-black: #0E0F11;
+  --c-white: #FFFFFF;
+  --c-scrim: rgba(11, 12, 14, .45);
+  --c-bg-glass: rgba(245, 247, 247, .88);
+  --c-surface-glass: rgba(255, 255, 255, .9);
+  --c-on-dark-12: rgba(255, 255, 255, .12);
+  --c-on-dark-55: rgba(255, 255, 255, .55);
+  --c-on-dark-75: rgba(255, 255, 255, .78);
+
+  /* Status */
+  --c-success: #15803D;
+  --c-success-50: #E8F7ED;
+  --c-success-200: #A7DFBA;
+  --c-success-700: #0F6B33;
+  --c-error: #C62828;
+  --c-error-50: #FDECEC;
+  --c-error-200: #F4B4B4;
+  --c-warning: #B45309;
+  --c-warning-50: #FEF4E2;
+  --c-warning-200: #F5D49B;
+  --c-live: #E53935;
+
+  /* Section themes (Home cards): vivid two-stop gradients. Stop 1 (title corner) is deep enough for white text;
+     stop 2 (art corner) is brighter. --th-*-ink is the deep stop, used for small accents such as heading bars. */
+  --th-violet-1: #6A3BEA; --th-violet-2: #A85CF2; --th-violet-ink: #6A3BEA;
+  --th-blue-1: #2C57E6;   --th-blue-2: #4FA6F7;   --th-blue-ink: #2C57E6;
+  --th-teal-1: #0B907F;   --th-teal-2: #34D3B0;   --th-teal-ink: #0B907F;
+  --th-amber-1: #D9620F;  --th-amber-2: #F9A93E;  --th-amber-ink: #C2570C;
+  --th-rose-1: #CF2E66;   --th-rose-2: #F27499;   --th-rose-ink: #CF2E66;
+  --th-soon-1: #6F7887;   --th-soon-2: #A9B0BB;   --th-soon-ink: #6F7887;
+  --c-white-10: rgba(255, 255, 255, .10);
+  --c-white-16: rgba(255, 255, 255, .16);
+  --c-white-24: rgba(255, 255, 255, .24);
+  --c-white-40: rgba(255, 255, 255, .40);
+  --sh-text: 0 1px 2px rgba(11, 12, 14, .18);
+  --sh-art: drop-shadow(0 10px 14px rgba(11, 12, 14, .18));
+
+  /* Premium uses the product's premium colour (the violet accent), nothing extra */
+  --c-accent-hover: #5A2FD6;
+  --c-accent-press: #4B26B8;
+  --c-gold: #F5B83D; /* skipped-question bar segment on the test screen */
+
+  /* Typography */
+  --f-sans: "Urbanist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-ml: "Noto Sans Malayalam", "Urbanist", "Nirmala UI", sans-serif;
+  --f-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --t-display: 700 30px/38px var(--f-sans);
+  --t-h1: 700 24px/32px var(--f-sans);
+  --t-h2: 700 20px/28px var(--f-sans);
+  --t-h3: 600 17px/24px var(--f-sans);
+  --t-body: 500 16px/24px var(--f-sans);
+  --t-body-sm: 500 14px/20px var(--f-sans);
+  --t-caption: 500 13px/18px var(--f-sans);
+  --t-label: 600 12px/16px var(--f-sans);
+  --t-stat: 600 32px/36px var(--f-sans);
+  --t-timer: 700 26px/30px var(--f-sans);
+
+  /* Spacing (4px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  /* Radii */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* Shadows */
+  --sh-1: 0 1px 2px rgba(16, 24, 40, .04);
+  --sh-2: 0 6px 20px rgba(16, 24, 40, .08);
+  --sh-3: 0 20px 48px rgba(16, 24, 40, .16);
+  --ring: 0 0 0 3px rgba(10, 79, 220, .35);
+  --sh-cta: 0 8px 20px rgba(80, 60, 230, .25);
+  --sh-nav: 0 -1px 0 var(--c-border), 0 -8px 24px rgba(16, 24, 40, .04);
+
+  /* Layout */
+  --w-user: 1120px;
+  --w-form: 760px;
+  --w-test: 720px;
+  --h-topbar: 60px;
+  --h-bottomnav: 64px;
+  --w-sidebar: 264px;
+  --w-urail: 88px;   /* User app icon rail (tablet) */
+  --w-uside: 0px;    /* User app sidebar width at the current breakpoint */
+
+  /* Motion */
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --dur: 180ms;
+
+  /* Layers */
+  --z-nav: 20;
+  --z-drawer: 40;
+  --z-sheet: 60;
+  --z-push: 70;
+  --z-toast: 80;
+  --z-demo: 50; /* below sheets so it never covers them */
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --h-topbar: 72px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 0ms;
+  }
+}
