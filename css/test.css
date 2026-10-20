@@ -85,8 +85,10 @@ body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-a
 .pal--wrong { background: var(--c-error); border-color: var(--c-error); color: var(--c-white); }
 .pal.is-current { outline: 2px solid var(--c-text); outline-offset: 2px; }
 /* ---------- Test top bar: brand + title | timer | language ---------- */
-.ts--panel .ts-top { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.ts--panel .ts-top { grid-template-columns: minmax(0, 1fr) auto auto auto; }
 .ts--panel #ts-lang { justify-self: end; }
+.ts-progress-trigger { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; }
+.ts-progress-trigger svg { width: 21px; height: 21px; }
 .ts-brand { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
 .ts-brand .logo-mark { width: 32px; height: 32px; }
 .ts-brand-title { display: none; font: 600 14px/18px var(--f-sans); color: var(--c-text-2); }
@@ -104,6 +106,7 @@ body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-a
 .tp { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-3); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
 .tp-head { display: none; }
 .tp-title { font: var(--t-h3); }
+.tp-close { display: none; }
 .tp-sub { font: var(--t-caption); color: var(--c-text-3); }
 .tp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); }
 .tp-stat { display: flex; align-items: baseline; gap: 6px; min-width: 0; padding: 6px var(--s-2); border-radius: var(--r-sm); background: var(--c-surface-muted); }
@@ -136,7 +139,22 @@ body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-a
 .review-hint { margin-top: var(--s-3); }
 .tp-submit { display: none; }
 
+/* Mobile progress drawer: keep the question focused until the learner asks to see progress. */
+.ts-progress-backdrop { display: none; }
+@media (max-width: 1023.98px) {
+  .ts-panel { position: fixed; z-index: var(--z-sheet); top: 0; right: 0; bottom: 0; width: min(88vw, 380px); padding: var(--s-4); overflow-y: auto; background: var(--c-surface); box-shadow: var(--sh-3); transform: translateX(105%); visibility: hidden; transition: transform var(--dur) var(--ease), visibility var(--dur) var(--ease); }
+  .ts-panel.is-open { transform: translateX(0); visibility: visible; }
+  .ts-panel .tp { margin-top: env(safe-area-inset-top); }
+  .ts-panel.is-open .tp-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); }
+  .ts-panel.is-open .tp-sub { display: none; }
+  .ts-panel.is-open .tp-close { display: inline-grid; flex: 0 0 auto; }
+  .ts-progress-backdrop.is-open { display: block; position: fixed; z-index: calc(var(--z-sheet) - 1); inset: 0; width: 100%; height: 100%; border: 0; background: var(--c-scrim); }
+  body.ts-progress-open { overflow: hidden; }
+}
+@media (min-width: 1024px) { .ts-progress-trigger { display: none; } }
+
 @media (min-width: 1024px) {
+  .ts--panel .ts-top { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
   .ts-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; gap: var(--s-6); padding-top: var(--s-6); }
   .ts-panel { order: 0; position: sticky; top: calc(64px + var(--s-6)); }
   .tp { gap: var(--s-4); padding: var(--s-5); max-height: calc(100vh - 112px); max-height: calc(100dvh - 112px); overflow-y: auto; }

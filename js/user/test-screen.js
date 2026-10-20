@@ -38,6 +38,7 @@
         <div class="ts-brand">${raw(BP.logoMark())}<span class="ts-brand-title truncate">${a.snapshot.title}</span></div>
         ${T.review ? html`<div class="ts-title"><span class="t-h3">Review</span></div>`
           : html`<div class="timer" id="ts-timer"><span class="timer-ic">${icon('clock')}</span><span id="ts-time" class="t-num">--:--</span><span class="visually-hidden"> left</span></div>`}
+        <button type="button" class="icon-btn ts-progress-trigger" data-act="toggle-progress" aria-label="${T.review ? 'Open answer summary' : 'Open your progress'}" aria-expanded="false" aria-controls="ts-panel">${icon('list-checks')}</button>
         <div id="ts-lang">${langToggle()}</div>
       </header>
       <div class="ts-progress" aria-hidden="true"><span id="ts-bar"></span></div>
@@ -46,7 +47,8 @@
           <p class="ts-path t-caption truncate">${a.snapshot.path.join(' › ')}</p>
           <div id="ts-body"></div>
         </main>
-        <aside class="ts-panel" id="ts-panel" aria-label="${T.review ? 'Answer summary' : 'Question progress'}"></aside>
+        <button type="button" class="ts-progress-backdrop" id="ts-progress-backdrop" data-act="close-progress" aria-label="Close your progress"></button>
+        <aside class="ts-panel" id="ts-panel" role="complementary" aria-label="${T.review ? 'Answer summary' : 'Question progress'}" aria-hidden="true"></aside>
       </div>
       <footer class="ts-foot" id="ts-foot"></footer>
       <div class="visually-hidden" aria-live="assertive" id="ts-live"></div>
@@ -126,6 +128,7 @@
       <div class="tp-head">
         <h2 class="tp-title">${T.review ? 'Answer summary' : 'Your progress'}</h2>
         <span class="tp-sub t-num">${T.review ? c.correct + ' of ' + n + ' correct' : c.answered + ' of ' + n + ' attempted'}</span>
+        <button type="button" class="icon-btn tp-close" data-act="close-progress" aria-label="Close your progress">${icon('x')}</button>
       </div>
       <div class="tp-stats" role="status" aria-live="polite">${stats.map((s) => html`<div class="tp-stat tp-stat--${s[0]}"><b class="t-num">${s[2]}</b><span>${s[1]}</span></div>`)}</div>
       <div class="tp-bar" aria-hidden="true">${stats.map((s) => (s[2] ? html`<span class="tp-seg tp-seg--${s[0]}" style="flex-grow:${s[2]}"></span>` : ''))}</div>
@@ -154,6 +157,7 @@
     document.getElementById('ts-body').innerHTML = String(body(a));
     document.getElementById('ts-foot').innerHTML = String(foot(a));
     document.getElementById('ts-panel').innerHTML = String(panel(a));
+    syncProgressDrawer();
     const c = counts(a);
     const pct = T.review ? (curIndex(a) + 1) / a.snapshot.questions.length * 100 : c.answered / a.snapshot.questions.length * 100;
     document.getElementById('ts-bar').style.width = pct + '%';
@@ -161,6 +165,35 @@
     const cur = document.querySelector('.tp-grid .is-current');
     const strip = cur && cur.closest('.tp-grid');
     if (cur && strip.scrollWidth > strip.clientWidth) strip.scrollLeft = cur.offsetLeft - (strip.clientWidth - cur.offsetWidth) / 2;
+  }
+
+  function syncProgressDrawer() {
+    const panel = document.getElementById('ts-panel');
+    const backdrop = document.getElementById('ts-progress-backdrop');
+    const trigger = document.querySelector('.ts-progress-trigger');
+    if (!panel || !backdrop || !trigger) return;
+    const mobile = window.matchMedia('(max-width: 1023.98px)').matches;
+    const drawerOpen = !!T.progressOpen && mobile;
+    panel.classList.toggle('is-open', drawerOpen);
+    backdrop.classList.toggle('is-open', drawerOpen);
+    panel.setAttribute('role', drawerOpen ? 'dialog' : 'complementary');
+    if (drawerOpen) panel.setAttribute('aria-modal', 'true'); else panel.removeAttribute('aria-modal');
+    panel.setAttribute('aria-hidden', String(mobile && !drawerOpen));
+    panel.inert = mobile && !drawerOpen;
+    trigger.setAttribute('aria-expanded', String(drawerOpen));
+    document.body.classList.toggle('ts-progress-open', drawerOpen);
+  }
+
+  function setProgressOpen(open, restoreFocus) {
+    T.progressOpen = !!open;
+    syncProgressDrawer();
+    if (T.progressOpen) {
+      const close = document.querySelector('#ts-panel .tp-close');
+      if (close) close.focus({ preventScroll: true });
+    } else if (restoreFocus !== false) {
+      const trigger = document.querySelector('.ts-progress-trigger');
+      if (trigger) trigger.focus({ preventScroll: true });
+    }
   }
 
   /* ---------- Timer, heartbeat, connection ---------- */
@@ -220,6 +253,7 @@
     }
     draw();
     T.onKey = (e) => {
+      if (e.key === 'Escape' && T.progressOpen) { setProgressOpen(false); e.preventDefault(); return; }
       if (document.querySelector('#overlay-root .overlay') || document.getElementById('ts-overlay')) return;
       if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
       const k = e.key.toLowerCase();
@@ -229,12 +263,16 @@
       if (e.key === 'ArrowLeft') { move(-1); e.preventDefault(); }
     };
     document.addEventListener('keydown', T.onKey);
+    T.onResize = syncProgressDrawer;
+    window.addEventListener('resize', T.onResize);
   }
   function unmountScreen() {
     if (!T) return;
     (T.timers || []).forEach(clearInterval);
     document.removeEventListener('keydown', T.onKey);
+    window.removeEventListener('resize', T.onResize);
     document.body.classList.remove('in-test');
+    document.body.classList.remove('ts-progress-open');
   }
 
   function choose(k) {
@@ -290,7 +328,9 @@
       const a = attempt();
       if (curIndex(a) === a.snapshot.questions.length - 1) confirmSubmit(); else move(1);
     },
-    jump(el) { goTo(Number(el.dataset.i)); },
+    jump(el) { goTo(Number(el.dataset.i)); if (window.matchMedia('(max-width: 1023.98px)').matches) setProgressOpen(false, false); },
+    'toggle-progress'() { setProgressOpen(!T.progressOpen); },
+    'close-progress'() { setProgressOpen(false); },
     submit: confirmSubmit,
     lang(el) { BP.store.session.setLang(el.dataset.value); document.getElementById('ts-lang').innerHTML = String(langToggle()); draw(); },
     reconnect() {

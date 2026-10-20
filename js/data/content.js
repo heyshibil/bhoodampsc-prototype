@@ -11,7 +11,7 @@
     'If you lose connection, come back within 60 seconds to continue where you left off.',
   ].join('\n');
 
-  const POOL_SUBJECT = { geo: 'Kerala geography', ref: 'Kerala renaissance', fre: 'Freedom movement', con: 'Indian Constitution', sci: 'General science', mat: 'Mathematics', eng: 'English', gk: 'General knowledge', ca: 'Current affairs' };
+  const POOL_SUBJECT = { geo: 'Kerala geography', ref: 'Kerala renaissance', fre: 'Freedom movement', con: 'Indian Constitution', sci: 'General science', mat: 'Maths', eng: 'English', gk: 'General knowledge', ca: 'Current affairs', reason: 'Reasoning', mal: 'Malayalam' };
   const cloneQ = (q, id, subject) => ({ id, subject: subject || null, en: { text: q.en.text, options: q.en.options.slice(), explanation: q.en.explanation || '' }, ml: { text: q.ml.text, options: q.ml.options.slice(), explanation: q.ml.explanation || '' }, correctIndex: q.correctIndex });
 
   /** Pick n distinct questions, cycling through the given pools. `seed` varies the selection per test. */
@@ -77,7 +77,7 @@
       T('t_pyq10_m23', 'card_pyq_10th', { stage: M, year: 2023, title: '10th Level Mains 2023 · Sample paper', pools: L10, seed: 6, min: 10, premium: true }),
 
       T('t_pyq12_p23', 'card_pyq_12th', { stage: P, year: 2023, title: '12th Level Prelims 2023 · Sample paper', pools: L12, seed: 7 }),
-      T('t_pyq12_real_mock', 'card_pyq_12th', { stage: P, year: 2023, title: 'Real PSC Mock', pools: ['geo', 'con', 'sci', 'mat', 'eng', 'fre', 'ref', 'gk', 'ca'], seed: 23, n: 100, min: 90, withSubjects: true }),
+      T('t_pyq12_real_mock', 'card_pyq_12th', { stage: P, year: 2023, title: 'Real PSC Mock', pools: ['ca', 'mat', 'reason', 'mal', 'eng'], seed: 23, n: 100, min: 90, withSubjects: true }),
       T('t_pyq12_p22', 'card_pyq_12th', { stage: P, year: 2022, title: '12th Level Prelims 2022 · Sample paper', pools: L12, seed: 8, premium: true, by: V }),
       T('t_pyq12_m22', 'card_pyq_12th', { stage: M, year: 2022, title: '12th Level Mains 2022 · Sample paper', pools: L12, seed: 9, min: 10 }),
 

@@ -154,5 +154,5 @@
     };
   }
 
-  BP.seed = { version: 5, build, DISTRICTS, QUALIFICATIONS, isoDaysAgo };
+  BP.seed = { version: 6, build, DISTRICTS, QUALIFICATIONS, isoDaysAgo };
 })();

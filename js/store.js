@@ -15,6 +15,24 @@
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && parsed.version === BP.seed.version) { state = parsed; return; }
+        // Update only the requested seeded mock on existing v5 demos; keep saved attempts,
+        // creator drafts and admin structure/content intact.
+        if (parsed && parsed.version === 5 && BP.seed.version === 6) {
+          const seededMock = fresh().tests.find((test) => test.id === 't_pyq12_real_mock');
+          if (seededMock && Array.isArray(parsed.tests)) {
+            let replaced = false;
+            parsed.tests = parsed.tests.map((test) => {
+              if (test.id !== seededMock.id) return test;
+              replaced = true;
+              return seededMock;
+            });
+            if (!replaced) parsed.tests.push(seededMock);
+            parsed.version = BP.seed.version;
+            state = parsed;
+            save();
+            return;
+          }
+        }
       }
     } catch (e) { /* corrupt or blocked storage: fall through to a fresh seed */ }
     state = fresh();

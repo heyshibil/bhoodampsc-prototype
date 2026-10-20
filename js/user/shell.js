@@ -56,7 +56,7 @@
       </header>
       <main id="main" class="u-main container">${content}</main>
       <nav class="u-bottom" aria-label="Main">
-        ${items.map((it) => html`<a href="${it.href}" aria-current="${current(ctx, it.key)}">
+        ${items.filter((it) => it.key !== 'alerts').map((it) => html`<a href="${it.href}" aria-current="${current(ctx, it.key)}">
           <span class="nav-ic">${icon(it.icon)}${badge(it.badge)}</span>${it.label}${srCount(it.badge)}
         </a>`)}
       </nav>
