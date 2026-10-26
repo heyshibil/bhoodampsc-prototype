@@ -13,21 +13,21 @@
 }
 .p-shell.drawer-open .sidebar { transform: none; box-shadow: var(--sh-3); }
 .sidebar .logo { padding: 0 var(--s-2); }
-.side-group { display: flex; flex-direction: column; gap: var(--s-2); }
-.side-label { padding: 0 var(--s-2) var(--s-1); font: 600 14px/20px var(--f-sans); color: var(--c-text); }
+.side-group { display: flex; flex-direction: column; gap: 2px; }
+.side-label { padding: 0 var(--s-3) var(--s-2); font: var(--t-label); color: var(--c-text-3); text-transform: uppercase; letter-spacing: .06em; }
 .side-role { display: inline-flex; align-self: flex-start; margin: calc(var(--s-2) * -1) var(--s-2) 0; }
 .side-item {
-  display: flex; align-items: center; gap: var(--s-3); min-height: 48px; padding: 0 var(--s-4);
-  border-radius: var(--r-md); background: var(--c-surface-muted); color: var(--c-text-2);
+  position: relative; display: flex; align-items: center; gap: var(--s-3); min-height: 44px; padding: 0 var(--s-3);
+  border-radius: var(--r-md); background: transparent; color: var(--c-text-2);
   font: 500 15px/20px var(--f-sans); text-decoration: none; text-align: left; width: 100%;
   transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
 }
-.side-item:hover { background: var(--c-border); color: var(--c-text); text-decoration: none; }
+.side-item:hover { background: var(--c-surface-muted); color: var(--c-text); text-decoration: none; }
 .side-item:focus-visible { border-radius: var(--r-md); }
 .side-item svg { width: 20px; height: 20px; flex-shrink: 0; }
 .side-item .badge { margin-left: auto; }
-.side-item[aria-current="page"] { background: var(--c-primary); color: var(--c-white); font-weight: 600; }
-.side-item[aria-current="page"] .badge { background: var(--c-white); color: var(--c-primary); }
+.side-item[aria-current="page"] { background: var(--c-primary-50); color: var(--c-primary); font-weight: 600; }
+.side-item[aria-current="page"]::before { content: ""; position: absolute; left: -16px; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--c-primary); }
 .side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 2px; padding-top: var(--s-4); border-top: 1px solid var(--c-border); }
 .side-foot .side-item { background: transparent; }
 .side-foot .side-item:hover { background: var(--c-surface-muted); }
@@ -72,11 +72,10 @@ body.has-bottomnav .demo-fab { bottom: calc(var(--h-bottomnav) + var(--s-3) + en
 /* Panels have the sidebar (and Log out) on the left, so the demo button moves right */
 body[data-role="creator"] .demo-fab, body[data-role="admin"] .demo-fab { left: auto; right: var(--s-4); }
 body:has(.p-shell.drawer-open) .demo-fab { display: none; }
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   body.has-bottomnav .demo-fab { bottom: var(--s-4); }
-  /* The user sidebar's premium card is bottom-left, so the demo button moves right */
-  body[data-role="user"] .demo-fab { left: auto; right: var(--s-4); }
 }
+body[data-role="user"] .demo-fab { left: auto; right: var(--s-4); }
 .demo-sheet .sheet-head h2::after { content: "Prototype tools"; display: block; font: var(--t-caption); color: var(--c-text-3); }
 .demo-group { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4) 0; border-bottom: 1px solid var(--c-border); }
 .demo-group:last-child { border-bottom: 0; }
@@ -111,10 +110,7 @@ body:has(.p-shell.drawer-open) .demo-fab { display: none; }
 /* ---------- Full-page centred layout (auth, signed out, not found) ---------- */
 .center-page {
   min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: var(--s-6) var(--s-4);
-  background:
-    radial-gradient(900px 480px at 85% -10%, var(--c-accent-50), transparent 60%),
-    radial-gradient(800px 520px at -10% 110%, var(--c-primary-100), transparent 60%),
-    var(--c-bg);
+  background: var(--c-bg);
 }
 .center-card { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: var(--s-6); }
-.center-card .card { padding: var(--s-6); border-radius: var(--r-xl); box-shadow: var(--sh-2); border-color: transparent; }
+.center-card .card { padding: var(--s-6); border-radius: var(--r-lg); box-shadow: var(--sh-1); }

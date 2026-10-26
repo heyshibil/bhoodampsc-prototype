@@ -24,25 +24,34 @@
       const path = BP.content.testPath(t);
       const card = BP.store.byId('cards', t.cardId);
       const neg = t.negativeMarking ? fmt(t.negativeValue) : null;
+      const creatorRules = String(t.rules || '').split('\n').map((r) => r.trim()).filter(Boolean);
       return html`
         ${BP.u.pageHead({ back: backToList(t.cardId), backLabel: card ? card.title : 'Back', crumbs: path, title: t.title })}
         <div class="rules-layout">
           <div class="stack gap-4">
-            <div class="stat-grid stat-grid--4">
+            <div class="stat-grid stat-grid--4 test-facts" role="group" aria-label="Test overview">
               ${infoTile('clock', 'Duration', BP.u.fmtMin(t.durationMin))}
               ${infoTile('list', 'Questions', t.questions.length)}
-              ${infoTile('award', 'Marks each', fmt(t.marksPerQuestion))}
+              ${infoTile('list', 'Marks each', fmt(t.marksPerQuestion))}
               ${infoTile('minus', 'Negative marking', neg ? '−' + neg : 'Off', neg ? 'error' : 'neutral')}
             </div>
-            <div class="card stack gap-3">
-              <h2 class="t-h3">Before you start</h2>
-              <ul class="rules-list">
-                ${t.rules.split('\n').filter((r) => r.trim()).map((r) => html`<li>${r}</li>`)}
-                <li>${t.negativeMarking ? 'Each wrong answer deducts ' + neg + ' mark. Skipped questions do not lose marks.' : 'There is no negative marking in this test.'}</li>
-                <li>Switch between English and Malayalam at any time with the EN / <span lang="ml">മല</span> button.</li>
-                <li>There is no pause. Once you start, the timer keeps running.</li>
-              </ul>
-            </div>
+            <section class="card instructions-card stack gap-4" aria-labelledby="instructions-title">
+              <header class="instructions-head">
+                <span class="instructions-icon" aria-hidden="true">${icon('list-checks')}</span>
+                <div class="stack gap-1">
+                  <span class="t-label instructions-kicker">BEFORE YOU BEGIN</span>
+                  <h2 class="t-h2" id="instructions-title">General instructions</h2>
+                  <p class="t-body-sm t-muted">Please review the guidance from your test creator.</p>
+                </div>
+              </header>
+              ${creatorRules.length ? html`<ol class="rules-list">${creatorRules.map((r) => html`<li>${r}</li>`)}</ol>`
+                : html`<div class="notice notice--info">${icon('info')}<span>No additional instructions were provided for this test.</span></div>`}
+              <div class="instruction-notes" role="group" aria-label="Scoring and language options">
+                <div class="instruction-note">${icon(t.negativeMarking ? 'minus' : 'check-circle')}<span>${t.negativeMarking ? 'Each wrong answer deducts ' + neg + ' mark. Unanswered questions do not lose marks.' : 'There is no negative marking in this test.'}</span></div>
+                <div class="instruction-note">${icon('languages')}<span>Use the EN / <span lang="ml">മല</span> control during the test to switch question language.</span></div>
+                <div class="instruction-note">${icon('clock')}<span>The timer cannot be paused after you start.</span></div>
+              </div>
+            </section>
           </div>
           <aside class="rules-side">
             ${locked ? html`<div class="card locked-card stack gap-4">
@@ -52,6 +61,7 @@
               </div>`
               : html`<div class="card start-card stack gap-4">
                 <div class="row-wrap gap-2">${BP.u.accessTag(t, user)}${t.sample ? tag('outline', 'Sample paper') : ''}</div>
+                <div class="stack gap-1"><h2 class="t-h2">${live ? 'Continue your test' : other ? 'Test details' : 'Ready when you are'}</h2><p class="t-body-sm t-muted">Find a quiet place and allow enough time to finish.</p></div>
                 ${other ? html`<div class="notice notice--warning">${icon('alert-triangle')}<span>You have another test in progress. <a href="#/user/attempt/${other.id}">Resume it</a> or let it finish first.</span></div>` : ''}
                 ${live ? html`<button type="button" class="btn btn--hero btn--lg btn--block" data-act="resume" data-id="${live.id}">${icon('timer')}Resume test</button>
                     <p class="t-caption">${Math.max(0, Math.ceil((live.expiresAt - Date.now()) / 60000))} min left on your timer.</p>`
@@ -78,11 +88,6 @@
   });
 
   /* ---------- Result ---------- */
-  function ring(pct) {
-    const r = 52, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct));
-    return BP.ui.raw(`<svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="${r}" class="ring-track"/><circle cx="60" cy="60" r="${r}" class="ring-fill" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p / 100)}"/></svg>`);
-  }
-
   BP.router.add('/user/attempt/:attemptId/result', {
     role: 'user', chrome: 'user', nav: 'home', title: 'Result',
     render(ctx) {
@@ -90,34 +95,66 @@
       if (!a || a.userId !== ctx.user.id) return BP.views.notFound.render();
       if (!a.result) { setTimeout(() => BP.router.go('/user/attempt/' + a.id, null, { replace: true })); return ''; }
       const r = a.result, s = a.snapshot;
-      const pct = r.max ? Math.round(Math.max(0, r.score) / r.max * 100) : 0;
       const test = BP.store.byId('tests', a.testId);
       const canRetake = test && test.status === 'published';
       const autoMsg = a.autoReason === 'away'
         ? 'Your test was submitted automatically because you were away for more than ' + BP.store.state.settings.reconnectSeconds + ' seconds. Your saved answers were kept.'
         : a.autoReason === 'time' ? 'Time ran out, so your test was submitted automatically with your saved answers.' : '';
-      const mood = pct >= 75 ? 'Excellent work!' : pct >= 50 ? 'Good effort!' : 'Keep practising!';
+      const attempted = r.correct + r.wrong;
+      const n = s.questions.length;
+      const accuracy = attempted ? Math.round(r.correct / attempted * 1000) / 10 : 0;
+      const pct = (v) => (n ? (v / n * 100) : 0);
+      const clock = (sec) => { sec = Math.max(0, Math.round(sec || 0)); return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); };
+      const qTime = (q) => Number(a.questionTimeSec && a.questionTimeSec[q.id]) || 0;
+      const rows = BP.testSections(a).map((g) => {
+        const sc = BP.scoring.score(Object.assign({}, s, { questions: g.questions }), a.answers);
+        const att = sc.correct + sc.wrong;
+        return { title: g.title, score: sc.score, max: sc.max, att, n: g.questions.length, acc: att ? Math.round(sc.correct / att * 1000) / 10 : 0, time: g.questions.reduce((t, q) => t + qTime(q), 0) };
+      });
+      const single = rows.length === 1;
+      const statTile = (ic, variant, value, sub, label) => html`<div class="rs-stat">${iconTile(ic, variant)}<div class="rs-stat-text"><span class="rs-stat-value t-num">${value}${sub ? html`<small> / ${sub}</small>` : ''}</span><span class="rs-stat-label">${label}</span></div></div>`;
       return html`
-        ${BP.u.pageHead({ back: backToList(s.cardId), backLabel: 'Back to tests', crumbs: s.path, title: s.title })}
+        ${BP.u.pageHead({ back: backToList(s.cardId), backLabel: 'Back to tests', crumbs: s.path, title: s.title, sub: (a.status === 'auto_submitted' ? 'Auto-submitted' : 'Submitted') + ' · ' + BP.ui.fmtRelative(a.submittedAt || a.startedAt) })}
         ${autoMsg ? html`<div class="notice notice--warning mb-4" role="status">${icon(a.autoReason === 'away' ? 'wifi-off' : 'clock')}<span><b>Submitted automatically.</b> ${autoMsg}</span></div>` : ''}
         <div class="result-layout">
-          <div class="card card--hero result-hero">
-            <div class="ring-wrap">${ring(pct)}<div class="ring-label"><span class="t-display t-num">${fmt(r.score)}</span><span class="t-caption">out of ${fmt(r.max)}</span></div></div>
-            <div class="stack gap-2">
-              <span class="tag tag--outline self-start">${a.status === 'auto_submitted' ? 'Auto-submitted' : 'Submitted'} · ${BP.ui.fmtRelative(a.submittedAt || a.startedAt)}</span>
-              <h2 class="t-h2">${mood}</h2>
-              <p class="t-body-sm t-muted">${s.negativeMarking ? r.correct + ' correct × ' + fmt(s.marksPerQuestion) + ' = ' + fmt(r.gained) + ', minus ' + r.wrong + ' wrong × ' + fmt(s.negativeValue) + ' = ' + fmt(r.deducted) + '.' : 'No negative marking in this test.'}</p>
+          <section class="card rs-stats" aria-label="Your performance">
+            ${statTile('award', 'accent', fmt(r.score), fmt(r.max), 'Score')}
+            ${statTile('list-checks', 'primary', attempted, n, 'Attempted')}
+            ${statTile('target', 'success', accuracy + '%', '', 'Accuracy')}
+            ${statTile('clock', 'warning', BP.u.fmtDuration(r.timeTakenSec), BP.u.fmtMin(s.durationMin), 'Time taken')}
+          </section>
+
+          <section class="card stack gap-4" aria-labelledby="rs-breakdown">
+            <div class="row-between"><h2 class="t-h3" id="rs-breakdown">Answer breakdown</h2><span class="t-caption">${s.negativeMarking ? '+' + fmt(s.marksPerQuestion) + ' correct · −' + fmt(s.negativeValue) + ' wrong' : '+' + fmt(s.marksPerQuestion) + ' correct · no negative marking'}</span></div>
+            <div class="rs-bar" role="img" aria-label="${r.correct} correct, ${r.wrong} wrong, ${r.skipped} skipped">
+              ${r.correct ? html`<span class="rs-bar-seg rs-bar-seg--correct" style="width:${pct(r.correct)}%"></span>` : ''}
+              ${r.wrong ? html`<span class="rs-bar-seg rs-bar-seg--wrong" style="width:${pct(r.wrong)}%"></span>` : ''}
+              ${r.skipped ? html`<span class="rs-bar-seg rs-bar-seg--skipped" style="width:${pct(r.skipped)}%"></span>` : ''}
             </div>
-          </div>
-          <div class="stat-grid stat-grid--4">
-            ${infoTile('check-circle', 'Correct', r.correct, 'success')}
-            ${infoTile('x-circle', 'Wrong', r.wrong, 'error')}
-            ${infoTile('minus', 'Skipped', r.skipped, 'warning')}
-            ${infoTile('clock', 'Time taken', BP.u.fmtDuration(r.timeTakenSec))}
-          </div>
+            <div class="rs-legend">
+              <span><i class="rs-dot rs-dot--correct"></i>Correct <b class="t-num">${r.correct}</b></span>
+              <span><i class="rs-dot rs-dot--wrong"></i>Wrong <b class="t-num">${r.wrong}</b>${s.negativeMarking && r.deducted ? html`<small class="t-num">(−${fmt(r.deducted)})</small>` : ''}</span>
+              <span><i class="rs-dot rs-dot--skipped"></i>Skipped <b class="t-num">${r.skipped}</b></span>
+            </div>
+          </section>
+
+          <section class="stack gap-3" aria-labelledby="rs-sections">
+            <h2 class="t-h2" id="rs-sections">Sectional summary</h2>
+            <div class="table-wrap rs-table-wrap"><table class="table table--stack rs-table">
+              <thead><tr><th scope="col">Section</th><th scope="col">Score</th><th scope="col">Attempted</th><th scope="col">Accuracy</th><th scope="col">Time</th></tr></thead>
+              <tbody>${rows.map((row) => html`<tr>
+                <th scope="row" class="rs-sec-name">${row.title}</th>
+                <td data-label="Score"><span class="rs-cell rs-cell--score"><b class="t-num">${fmt(row.score)}</b><small> / ${fmt(row.max)}</small></span></td>
+                <td data-label="Attempted"><span class="rs-cell rs-cell--att"><b class="t-num">${row.att}</b><small> / ${row.n}</small></span></td>
+                <td data-label="Accuracy"><span class="rs-cell rs-cell--acc"><b class="t-num">${row.acc}%</b></span></td>
+                <td data-label="Time"><span class="rs-cell rs-cell--time"><b class="t-num">${clock(row.time)}</b>${single ? html`<small> / ${BP.u.fmtMin(s.durationMin)}</small>` : ''}</span></td>
+              </tr>`)}</tbody>
+            </table></div>
+          </section>
+
           <div class="result-actions">
-            <a class="btn btn--primary btn--lg" href="#/user/attempt/${a.id}/review">${icon('eye')}Review answers</a>
-            ${canRetake ? html`<button type="button" class="btn btn--dark btn--lg" data-act="retake">${icon('refresh')}Retake test</button>` : ''}
+            <a class="btn btn--primary btn--lg" href="#/user/attempt/${a.id}/review">${icon('eye')}View solutions</a>
+            ${canRetake ? html`<button type="button" class="btn btn--secondary btn--lg" data-act="retake">${icon('refresh')}Retake test</button>` : ''}
             <a class="btn btn--ghost btn--lg" href="#/user/profile">Attempt history</a>
           </div>
         </div>`;

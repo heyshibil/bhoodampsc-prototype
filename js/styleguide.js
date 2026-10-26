@@ -75,7 +75,7 @@
         ${section('Status pills and tags', html`<div class="card stack gap-4">
           <div class="row-wrap gap-2">${['draft', 'submitted', 'published', 'rejected', 'unpublished'].map(contentPill)}</div>
           <div class="row-wrap gap-2">${['live', 'coming_soon', 'hidden'].map(cardPill)} ${pill('completed', 'Completed')} ${pill('auto', 'Auto-submitted')} ${pill('premium', 'Premium')}</div>
-          <div class="row-wrap gap-2">${tag('premium', 'Premium', 'crown')} ${tag('free', 'Free')} ${tag('primary', 'Prelims')} ${tag('neutral', '2023')} ${tag('outline', 'Sample')} ${tag('warning', 'Last date soon')}</div>
+          <div class="row-wrap gap-2">${tag('premium', 'Premium', 'unlock')} ${tag('free', 'Free')} ${tag('primary', 'Prelims')} ${tag('neutral', '2023')} ${tag('outline', 'Sample')} ${tag('warning', 'Last date soon')}</div>
         </div>`)}
 
         ${section('Chips and tabs', html`<div class="card stack gap-4">
@@ -100,7 +100,7 @@
           </div>
           <div class="choice-grid" role="radiogroup" aria-label="Access">
             <label class="choice"><input type="radio" name="sg-acc" checked><span>${iconTile('check-circle', 'success', 'sm')}</span><span><span class="choice-title">Free</span><br><span class="choice-desc">Everyone can take it</span></span></label>
-            <label class="choice"><input type="radio" name="sg-acc"><span>${iconTile('crown', 'accent', 'sm')}</span><span><span class="choice-title">Premium</span><br><span class="choice-desc">Subscribers only</span></span></label>
+            <label class="choice"><input type="radio" name="sg-acc"><span>${iconTile('unlock', 'accent', 'sm')}</span><span><span class="choice-title">Premium</span><br><span class="choice-desc">Subscribers only</span></span></label>
           </div>
         </div>`)}
 
@@ -123,7 +123,7 @@
             <div class="stat"><div class="stat-head">${iconTile('list-checks', '', 'sm')}<span class="stat-label">Pending<br>approvals</span></div><span class="t-stat">4</span></div>
             <div class="stat"><div class="stat-head">${iconTile('file-text', '', 'sm')}<span class="stat-label">Published<br>tests</span></div><span class="t-stat">31</span></div>
             <div class="stat"><div class="stat-head">${iconTile('users', '', 'sm')}<span class="stat-label">Registered<br>users</span></div><span class="t-stat">8</span></div>
-            <div class="stat"><div class="stat-head">${iconTile('crown', 'accent', 'sm')}<span class="stat-label">Premium<br>users</span></div><span class="t-stat">3</span></div>
+            <div class="stat"><div class="stat-head">${iconTile('unlock', 'accent', 'sm')}<span class="stat-label">Premium<br>users</span></div><span class="t-stat">3</span></div>
           </div>
           <div class="card card--hero stack gap-3">
             <span class="tag tag--outline self-start">Sample</span>
@@ -150,7 +150,7 @@
           <div class="notice notice--warning">${icon('alert-triangle')}<span>Less than 5 minutes left.</span></div>
           <div class="notice notice--error">${icon('x-circle')}<span><b>Rejected:</b> Question 2 has an incomplete Malayalam option.</span></div>
           <div class="notice notice--success">${icon('check-circle')}<span>Your answers are saved as you go.</span></div>
-          <div class="notice notice--accent">${icon('crown')}<span>Premium unlocks every test and paper.</span></div>
+          <div class="notice notice--accent">${icon('unlock')}<span>Premium unlocks every test and paper.</span></div>
           ${emptyState({ icon: 'ghost', title: 'No tests here yet', text: 'New tests appear here as soon as they are approved.' })}
         </div>`)}
 

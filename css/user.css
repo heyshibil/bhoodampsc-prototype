@@ -1,23 +1,29 @@
-/* User app shell.
-   Phones (< 768):        slim top bar (logo + alerts bell) + bottom tab bar.
-   Tablets (768–1099):    icon rail on the left (icon + short label), no top bar.
-   Desktop (>= 1100):     full sidebar (logo, labelled menu groups, premium card).
+/* User app shell (master context §6).
+   Phones / tablets (< 1024): slim top bar (logo + premium) + bottom tab bar.
+   Desktop (>= 1024):         a single top navigation bar; content is centred below it.
    Menu items come from one list in js/user/shell.js, so new destinations slot into every layout. */
-.u-shell { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; padding-left: var(--w-uside); }
+.u-shell { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 
-/* ---------- Top bar (phones only) ---------- */
+/* ---------- Top bar ---------- */
 .u-top {
   position: sticky; top: 0; z-index: var(--z-nav);
   background: var(--c-surface-glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--c-border);
 }
-.u-top-inner { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); height: var(--h-topbar); }
+.u-top-inner { display: flex; align-items: center; gap: var(--s-3); height: var(--h-topbar); }
 .u-top .logo-mark { width: 32px; height: 32px; }
 .u-top .logo-word { font-size: 18px; }
+.u-top-end { display: flex; align-items: center; gap: var(--s-2); margin-left: auto; }
+.u-premium-btn { --btn-h: 36px; padding: 0 var(--s-3); color: var(--c-accent); border-color: var(--c-accent-200); }
+.u-premium-btn svg { width: 16px; height: 16px; }
+.u-premium-btn:hover { background: var(--c-accent-50); border-color: var(--c-accent); }
+.u-plan-tag { height: 28px; padding: 0 var(--s-3); }
+.u-premium-full { display: none; }
+.u-topnav, .u-account, .u-logout { display: none; }
 
 .u-main { flex: 1 1 auto; width: 100%; padding-top: var(--s-5); padding-bottom: calc(var(--h-bottomnav) + var(--s-10) + env(safe-area-inset-bottom)); }
 
-/* ---------- Bottom tab bar (phones only) ---------- */
+/* ---------- Bottom tab bar (phones and tablets) ---------- */
 .u-bottom {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-nav);
   display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
@@ -29,93 +35,47 @@
   color: var(--c-text-3); font: var(--t-label); text-decoration: none; position: relative;
 }
 .u-bottom a:hover { color: var(--c-text); text-decoration: none; }
-.u-bottom a[aria-current="page"] { color: var(--c-primary); }
+.u-bottom a[aria-current="page"] { color: var(--c-text); }
 .u-bottom a:focus-visible { box-shadow: none; }
 .u-bottom a:focus-visible .nav-ic { box-shadow: var(--ring); }
+@media (min-width: 640px) { .u-bottom { padding-inline: calc((100vw - 560px) / 2); } }
 
-/* Shared icon pill (bottom bar + rail) */
 .nav-ic {
-  position: relative; display: grid; place-items: center; width: 56px; height: 32px; border-radius: var(--r-pill);
+  position: relative; display: grid; place-items: center; width: 56px; height: 30px; border-radius: var(--r-pill);
   transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 .nav-ic svg { width: 22px; height: 22px; }
-.nav-ic .badge { position: absolute; top: -4px; right: 6px; border: 2px solid var(--c-surface); height: 20px; min-width: 20px; }
-[aria-current="page"] > .nav-ic { background: var(--c-primary); color: var(--c-white); }
+.nav-ic .badge { position: absolute; top: -4px; right: 8px; border: 2px solid var(--c-surface); height: 20px; min-width: 20px; }
+[aria-current="page"] > .nav-ic { background: var(--c-primary-50); color: var(--c-primary); }
 
-/* ---------- Sidebar / rail ---------- */
-.u-side { display: none; }
-.u-side-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--c-text); }
-.u-side-brand:hover { text-decoration: none; }
-.u-side-brand:focus-visible { border-radius: var(--r-md); }
-.u-side-nav { display: flex; flex-direction: column; gap: var(--s-2); }
-.u-side-label { padding: 0 var(--s-2) var(--s-1); font: 600 13px/18px var(--f-sans); color: var(--c-text-3); }
-.u-side-item { position: relative; display: flex; align-items: center; text-decoration: none; color: var(--c-text-2); }
-.u-side-item:hover { text-decoration: none; color: var(--c-text); }
-.u-side-foot { margin-top: auto; display: flex; flex-direction: column; gap: var(--s-3); width: 100%; }
-/* Log out sits at the very bottom, under a divider */
-.u-side-sep { height: 1px; background: var(--c-border); }
-.u-side-logout { width: 100%; border: 0; background: transparent; cursor: pointer; }
-.u-rail-premium { display: none; }
-
-/* Rail: tablets */
-@media (min-width: 768px) {
-  :root { --w-uside: var(--w-urail); }
-  .u-top, .u-bottom { display: none; }
+/* ---------- Desktop: top navigation ---------- */
+@media (min-width: 1024px) {
+  .u-bottom { display: none; }
+  .u-top { background: var(--c-surface); }
+  .u-top-inner { gap: var(--s-8); }
+  .u-top .logo-mark { width: 36px; height: 36px; }
+  .u-top .logo-word { font-size: 20px; }
+  .u-topnav { display: flex; align-items: stretch; align-self: stretch; gap: var(--s-1); }
+  .u-topnav-item {
+    position: relative; display: inline-flex; align-items: center; gap: var(--s-2); padding: 0 var(--s-3);
+    color: var(--c-text-2); font: 600 15px/1 var(--f-sans); text-decoration: none;
+  }
+  .u-topnav-item svg { width: 18px; height: 18px; color: var(--c-text-3); }
+  .u-topnav-item:hover { color: var(--c-text); text-decoration: none; }
+  .u-topnav-item:hover svg { color: var(--c-text-2); }
+  .u-topnav-item::after { content: ""; position: absolute; left: var(--s-3); right: var(--s-3); bottom: -1px; height: 2px; border-radius: 2px 2px 0 0; background: transparent; }
+  .u-topnav-item[aria-current="page"] { color: var(--c-text); }
+  .u-topnav-item[aria-current="page"] svg { color: var(--c-primary); }
+  .u-topnav-item[aria-current="page"]::after { background: var(--c-primary); }
+  .u-topnav-item .badge { height: 18px; min-width: 18px; font-size: 10px; }
+  .u-topnav-item:focus-visible { border-radius: var(--r-sm); }
+  .u-top-end { gap: var(--s-3); }
+  .u-premium-full { display: inline-flex; }
+  .u-premium-compact { display: none; }
+  .u-account { display: inline-flex; align-items: center; gap: var(--s-2); padding: 4px var(--s-3) 4px 4px; border-radius: var(--r-pill); border: 1px solid var(--c-border); color: var(--c-text); font: 600 14px/1 var(--f-sans); text-decoration: none; }
+  .u-account:hover { text-decoration: none; background: var(--c-surface-muted); }
+  .u-account:focus-visible { border-radius: var(--r-pill); }
+  .u-logout { display: inline-grid; color: var(--c-text-3); }
+  .u-logout:hover { color: var(--c-text); }
   .u-main { padding-top: var(--s-8); padding-bottom: var(--s-16); }
-  .u-side {
-    position: fixed; inset: 0 auto 0 0; z-index: var(--z-nav); width: var(--w-uside);
-    display: flex; flex-direction: column; align-items: center; gap: var(--s-6);
-    padding: var(--s-5) var(--s-2) var(--s-4); background: var(--c-surface); border-right: 1px solid var(--c-border); overflow-y: auto;
-  }
-  .u-side-brand .logo-mark { width: 40px; height: 40px; }
-  .u-side-brand .logo-word, .u-side-label, .u-side-promo, .u-side-plan { display: none; }
-  .u-side-foot { align-items: center; }
-  .u-side-nav { align-items: center; gap: var(--s-3); width: 100%; }
-  .u-side-item { flex-direction: column; gap: 4px; width: 100%; padding: 4px 0; font: var(--t-label); }
-  .u-side-item:focus-visible { box-shadow: none; }
-  .u-side-item:focus-visible .nav-ic { box-shadow: var(--ring); }
-  .u-side-item:hover .nav-ic { background: var(--c-surface-muted); }
-  .u-side-item[aria-current="page"] { color: var(--c-primary); }
-  .u-side-item[aria-current="page"]:hover .nav-ic { background: var(--c-primary); }
-  /* Rail: premium is a single violet crown tile (a button for free users, a status mark for members) */
-  .u-rail-premium { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r-md); background: var(--c-accent-50); color: var(--c-accent); border: 1px solid var(--c-accent-200); }
-  .u-rail-premium svg { width: 20px; height: 20px; }
-  button.u-rail-premium:hover { background: var(--c-accent-200); }
-  button.u-rail-premium:focus-visible { border-radius: var(--r-md); }
-  .u-side-sep { width: 40px; }
 }
-
-/* Full sidebar: desktop */
-@media (min-width: 1100px) {
-  :root { --w-uside: var(--w-sidebar); }
-  .u-side { align-items: stretch; gap: var(--s-6); padding: var(--s-6) var(--s-4) var(--s-4); }
-  .u-side-brand { padding: 0 var(--s-2); }
-  .u-side-brand .logo-mark { width: 36px; height: 36px; }
-  .u-side-brand .logo-word { display: inline; font-size: 20px; }
-  .u-side-label { display: block; }
-  .u-side-nav { align-items: stretch; }
-  /* Same item style as the Creator / Admin sidebar for one consistent product */
-  .u-side-item {
-    flex-direction: row; gap: var(--s-3); min-height: 48px; padding: 0 var(--s-4);
-    border-radius: var(--r-md); background: var(--c-surface-muted); font: 500 15px/20px var(--f-sans);
-    transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
-  }
-  .u-side-item:hover { background: var(--c-border); }
-  .u-side-item:focus-visible { border-radius: var(--r-md); box-shadow: var(--ring); }
-  .u-side-item .nav-ic { width: auto; height: auto; background: none !important; color: inherit; }
-  .u-side-item .nav-ic svg { width: 20px; height: 20px; }
-  .u-side-item .nav-ic .badge { display: none; }
-  .u-side-item .side-count { margin-left: auto; }
-  .u-side-item[aria-current="page"] { background: var(--c-primary); color: var(--c-white); font-weight: 600; }
-  .u-side-item[aria-current="page"]:hover { background: var(--c-primary-hover); }
-  .u-side-item[aria-current="page"] .badge { background: var(--c-white); color: var(--c-primary); }
-  .u-side-foot { align-items: stretch; }
-  .u-side-promo { display: flex; }
-  .u-side-plan { display: inline-flex; align-self: flex-start; height: 32px; padding: 0 var(--s-3); font-size: 13px; }
-  .u-rail-premium { display: none; }
-  .u-side-sep { width: auto; }
-  /* Log out reads as a quiet row, like the Creator / Admin sidebar footer */
-  .u-side-item.u-side-logout { background: transparent; }
-  .u-side-item.u-side-logout:hover { background: var(--c-surface-muted); }
-}
-@media (max-width: 1099.98px) { .u-side-item .side-count { display: none; } }

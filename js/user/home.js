@@ -1,12 +1,11 @@
 /* User Home: banner area + sections and cards, all from BP.store. No section or card is named in code. */
 (function () {
   const BP = (window.BP = window.BP || {});
-  const { html, raw, icon, iconTile } = BP.ui;
+  const { html, icon, iconTile } = BP.ui;
   let cleanupBanner = () => {};
 
   function greeting() {
-    const h = new Date().getHours();
-    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    return 'Welcome back';
   }
 
   /** Live, data-driven line for a card: how much is inside it right now. */
@@ -23,20 +22,14 @@
     }
   }
 
-  /* Decorative layers for the cards (inspired by illustrated app cards): two soft waves, a glow and sparkles. */
-  const WAVES = '<svg viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true"><path class="w3" d="M118 0C138 22 166 36 200 30V0Z"/><path class="w1" d="M0 74C38 56 78 92 124 72S186 50 200 58V120H0Z"/><path class="w2" d="M0 98C46 82 96 116 146 94S192 86 200 90V120H0Z"/></svg>';
-  const SPARK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5 13.9 10.1 22.5 12 13.9 13.9 12 22.5 10.1 13.9 1.5 12 10.1 10.1Z"/></svg>';
-
-  /** Section-themed card. Used on Home, in the Admin card preview and in the component gallery. */
+  /** Section-themed card. Used on Home and in the Admin card preview. */
   function tile(card, section, opts) {
     opts = opts || {};
     const theme = 'theme-' + BP.themeOf(section);
     const soon = card.status === 'coming_soon';
-    const inner = html`<span class="tile-decor" aria-hidden="true">${raw(WAVES)}</span>
-      <span class="tile-spark tile-spark--a" aria-hidden="true">${raw(SPARK)}</span><span class="tile-spark tile-spark--b" aria-hidden="true">${raw(SPARK)}</span>
-      <span class="tile-art" aria-hidden="true">${icon(card.icon)}</span>
+    const inner = html`<span class="tile-art" aria-hidden="true">${icon(card.icon)}</span>
       <span class="tile-title">${card.title || 'Card title'}</span>
-      <span class="tile-meta">${soon ? icon('sparkles') : ''}${opts.meta || cardMeta(card)}</span>`;
+      <span class="tile-meta">${opts.meta || cardMeta(card)}</span>`;
     if (opts.preview) return html`<div class="tile ${theme} ${soon ? 'tile--soon' : ''} tile--preview">${inner}</div>`;
     if (soon) return html`<button type="button" class="tile ${theme} tile--soon" data-act="soon" data-id="${card.id}">${inner}</button>`;
     return html`<a class="tile ${theme}" href="#/user/card/${card.id}">${inner}</a>`;
@@ -65,7 +58,6 @@
             <p class="t-body-sm t-muted">${greeting()},</p>
             <h1 class="t-display">${u.name.split(' ')[0]}</h1>
           </div>
-          <div class="home-plan">${u.isPremium ? BP.u.premiumBadge('Premium') : BP.u.premiumCta()}</div>
         </div>
         ${resumeCard(u)}
         ${BP.banners.render(BP.store.q.activeBanners())}
@@ -91,10 +83,10 @@
         BP.ui.sheet({
           title: card.title,
           body: html`<div class="stack gap-4 items-center t-center pt-2">
-            ${iconTile(card.icon, 'accent', 'lg')}
+            ${iconTile(card.icon, 'neutral', 'lg')}
             <div class="stack gap-2">
-              <span class="tag tag--accent self-center">${icon('sparkles')}Coming soon</span>
-              <p class="t-body t-muted">We are preparing ${card.title} for you. It will open here as soon as it is ready.</p>
+              <span class="tag tag--neutral self-center">Available soon</span>
+              <p class="t-body t-muted">${card.title} is not available yet.</p>
             </div>
           </div>`,
           foot: html`<button type="button" class="btn btn--primary" data-act="close">Got it</button>`,
@@ -114,7 +106,7 @@
       if (!card || card.status === 'hidden' || !section || section.status === 'hidden') return BP.u.missingCard();
       if (card.status === 'coming_soon') {
         return html`${BP.u.pageHead({ back: '#/user/home', backLabel: 'Home', crumbs: [section.title], title: card.title })}
-          ${BP.ui.emptyState({ icon: 'sparkles', title: 'Coming soon', text: 'We are preparing this for you. It will open here as soon as it is ready.' })}`;
+          ${BP.ui.emptyState({ icon: 'clock', title: 'Available soon', text: 'This section is not available yet.' })}`;
       }
       const tpl = BP.templates[card.template];
       return tpl ? tpl.render(card, section, ctx) : BP.u.missingCard();

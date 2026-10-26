@@ -1,54 +1,114 @@
 /* The one test screen, used for every test, plus review mode (same screen, second chance then feedback).
    Distraction-free: no app navigation. Timer is the main element. EN/ML toggle always visible.
-   A question-progress panel is always on screen: on the right from 1024px, a compact strip above the question below that. */
+   Question progress stays in a desktop side panel and opens as a drawer on smaller screens.
+   Layout follows the exam-interface pattern aspirants know: question column, status palette with
+   shaped markers (shape + colour, never colour alone), section tabs when a test has several subjects. */
 (function () {
   const BP = (window.BP = window.BP || {});
   const { html, raw, icon } = BP.ui;
   const E = () => BP.engine;
-  let T = null; // { attemptId, review, index, timers[], onKey, announced{} }
+  let T = null; // { attemptId, review, index, section, timers[], onKey, announced{}, revealed{} }
 
   const lang = () => BP.store.state.session.lang;
   const L = () => (lang() === 'ml' ? raw(' lang="ml"') : '');
   const attempt = () => E().get(T.attemptId);
-  const mmss = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  const mmss = (s) => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  /** Clock format for time left: h:mm:ss from an hour up, mm:ss below. */
+  const clock = (s) => (s >= 3600 ? Math.floor(s / 3600) + ':' + mmss(s % 3600) : mmss(s));
 
-  /** answered | skipped (left unanswered) | unvisited (still to do, including the one on screen); review: correct | wrong | skipped */
-  function qState(a, q, k) {
-    const ans = a.answers[q.id];
-    if (T.review) {
-      const reviewAns = a.reviewAnswers && a.reviewAnswers[q.id];
-      return reviewAns == null ? 'unvisited' : reviewAns === q.correctIndex ? 'correct' : 'wrong';
-    }
-    if (ans != null) return 'answered';
-    return a.visited.includes(q.id) && k !== curIndex(a) ? 'skipped' : 'unvisited';
+  /* ---------- Sections: any test whose questions carry more than one subject gets section tabs ---------- */
+  function sectionList(a) {
+    const out = [];
+    a.snapshot.questions.forEach((q) => { if (q.subject && !out.includes(q.subject)) out.push(q.subject); });
+    return out;
   }
-  function counts(a) {
-    const c = { answered: 0, skipped: 0, unvisited: 0, correct: 0, wrong: 0 };
-    a.snapshot.questions.forEach((q, k) => { c[qState(a, q, k)]++; });
+  const hasSections = (a) => sectionList(a).length > 1;
+  const sectionForQuestion = (q) => q.subject || null;
+
+  /* ---------- Review helpers ---------- */
+  function reviewCategory(a, q) {
+    const chosen = a.answers[q.id];
+    return chosen == null ? 'unattempted' : chosen === q.correctIndex ? 'correct' : 'incorrect';
+  }
+  function questionTime(a, q) { return Math.max(0, Number(a.questionTimeSec && a.questionTimeSec[q.id]) || 0); }
+  /* Stable per-question number from its id, for demo aggregates the server will provide later. */
+  function seeded(q, min, max) {
+    let h = 7;
+    for (const ch of String(q.id)) h = (h * 31 + ch.charCodeAt(0)) % 100003;
+    return min + (h % (max - min + 1));
+  }
+  /** Average time all aspirants spent on this question (seconds). Demo value until real aggregates exist. */
+  const avgTime = (q) => (q.avgTimeSec != null ? q.avgTimeSec : seeded(q, 18, 75));
+  /** Share of aspirants who answered this question correctly (%). Demo value until real aggregates exist. */
+  const correctPct = (q) => (q.correctPct != null ? q.correctPct : seeded(q, 12, 86));
+  /** Speed against the average. Unanswered questions have no speed. */
+  function reviewSpeed(a, q) {
+    if (reviewCategory(a, q) === 'unattempted') return null;
+    const avg = Math.max(1, avgTime(q));
+    const spent = questionTime(a, q);
+    if (spent <= avg * 0.5) return 'superfast';
+    if (spent > avg * 1.25) return 'slow';
+    return reviewCategory(a, q) === 'incorrect' ? 'on-time-incorrect' : 'on-time';
+  }
+  const SPEEDS = [
+    ['superfast', 'Superfast', 'speed-fast'],
+    ['on-time', 'On time', 'speed-ontime'],
+    ['slow', 'Slow', 'speed-slow'],
+    ['on-time-incorrect', 'On time but not correct', 'speed-wrong'],
+  ];
+  function speedCounts(a) {
+    const out = { superfast: 0, 'on-time': 0, slow: 0, 'on-time-incorrect': 0 };
+    a.snapshot.questions.forEach((q) => { const s = reviewSpeed(a, q); if (s) out[s]++; });
+    return out;
+  }
+  function visibleIndexes(a) {
+    return a.snapshot.questions.reduce((out, q, i) => {
+      const inSection = !hasSections(a) || !T.section || sectionForQuestion(q) === T.section;
+      const inFilter = !T.review || !T.filters || T.filters[reviewCategory(a, q)];
+      if (inSection && inFilter) out.push(i);
+      return out;
+    }, []);
+  }
+
+  /** Question states.
+      Test: answered | notanswered (visited, no answer) | marked | marked-answered | unvisited.
+      Review: correct | incorrect | unattempted (from the original attempt). */
+  function qState(a, q, k) {
+    if (T.review) return reviewCategory(a, q);
+    const ans = a.answers[q.id];
+    const marked = (a.markedQuestions || []).includes(q.id);
+    if (marked) return ans != null ? 'marked-answered' : 'marked';
+    if (ans != null) return 'answered';
+    return a.visited.includes(q.id) && k !== curIndex(a) ? 'notanswered' : 'unvisited';
+  }
+  function counts(a, indexes) {
+    const c = { answered: 0, notanswered: 0, marked: 0, 'marked-answered': 0, unvisited: 0, correct: 0, incorrect: 0, unattempted: 0 };
+    const qs = a.snapshot.questions;
+    (indexes || qs.map((q, k) => k)).forEach((k) => { c[qState(a, qs[k], k)]++; });
     return c;
   }
-  const STATE_LABEL = { answered: 'attempted', skipped: 'skipped', unvisited: 'not attempted yet', correct: 'correct', wrong: 'wrong' };
-  const stateLabel = (st) => T.review && st === 'unvisited' ? 'not reviewed yet' : STATE_LABEL[st];
+  const STATE_LABEL = { answered: 'answered', notanswered: 'not answered', marked: 'marked for review', 'marked-answered': 'answered and marked for review', unvisited: 'not visited', correct: 'correct', incorrect: 'incorrect', unattempted: 'unattempted' };
   const curIndex = (a) => (T.review ? T.index : a.current || 0);
+  const answeredCount = (c) => c.answered + c['marked-answered'];
 
   /* ---------- Rendering ---------- */
   function frame(ctx, a) {
     return html`<div class="ts ts--panel ${T.review ? 'ts--review' : ''}">
       <header class="ts-top">
-        <div class="ts-brand">${raw(BP.logoMark())}<span class="ts-brand-title truncate">${a.snapshot.title}</span></div>
-        ${T.review ? html`<div class="ts-title"><span class="t-h3">Review</span></div>`
-          : html`<div class="timer" id="ts-timer"><span class="timer-ic">${icon('clock')}</span><span id="ts-time" class="t-num">--:--</span><span class="visually-hidden"> left</span></div>`}
-        <button type="button" class="icon-btn ts-progress-trigger" data-act="toggle-progress" aria-label="${T.review ? 'Open answer summary' : 'Open your progress'}" aria-expanded="false" aria-controls="ts-panel">${icon('list-checks')}</button>
+        <div class="ts-brand">${raw(BP.logoMark())}<span class="ts-brand-text"><span class="ts-brand-kicker">${T.review ? 'Solutions' : 'Test'}</span><span class="ts-brand-title truncate">${a.snapshot.title}</span></span></div>
+        ${T.review ? html`<div class="ts-title"><span class="ts-review-label">${icon('eye')}Review</span></div>`
+          : html`<div class="timer" id="ts-timer" role="timer"><span class="timer-ic">${icon('clock')}</span><span class="timer-caption">Time left</span><span id="ts-time" class="t-num">--:--</span><span class="visually-hidden"> left</span></div>`}
+        <button type="button" class="icon-btn ts-progress-trigger" data-act="toggle-progress" aria-label="${T.review ? 'Open answer summary' : 'Open question palette, question ' + (curIndex(a) + 1) + ' of ' + a.snapshot.questions.length}" aria-expanded="false" aria-controls="ts-panel">${icon('layout')}<span class="ts-progress-count">${curIndex(a) + 1}/${a.snapshot.questions.length}</span></button>
         <div id="ts-lang">${langToggle()}</div>
       </header>
       <div class="ts-progress" aria-hidden="true"><span id="ts-bar"></span></div>
       <div class="ts-layout">
         <main id="main" class="ts-main">
-          <p class="ts-path t-caption truncate">${a.snapshot.path.join(' › ')}</p>
+          <div id="ts-sections"></div>
           <div id="ts-body"></div>
         </main>
-        <button type="button" class="ts-progress-backdrop" id="ts-progress-backdrop" data-act="close-progress" aria-label="Close your progress"></button>
-        <aside class="ts-panel" id="ts-panel" role="complementary" aria-label="${T.review ? 'Answer summary' : 'Question progress'}" aria-hidden="true"></aside>
+        <button type="button" class="ts-progress-backdrop" id="ts-progress-backdrop" data-act="close-progress" aria-label="Close question palette"></button>
+        <aside class="ts-panel" id="ts-panel" role="complementary" aria-label="${T.review ? 'Answer summary' : 'Question palette'}" aria-hidden="true"></aside>
       </div>
       <footer class="ts-foot" id="ts-foot"></footer>
       <div class="visually-hidden" aria-live="assertive" id="ts-live"></div>
@@ -56,115 +116,195 @@
   }
   const langToggle = () => BP.ui.segmented([{ value: 'en', label: 'EN' }, { value: 'ml', label: raw('<span lang="ml">മല</span>') }], lang(), { act: 'lang', label: 'Question language', size: 'sm' });
 
+  function sections(a) {
+    const path = html`<p class="ts-path t-caption truncate">${a.snapshot.path.join(' › ')}</p>`;
+    if (!hasSections(a)) return path;
+    const list = sectionList(a);
+    const active = T.section || sectionForQuestion(a.snapshot.questions[curIndex(a)]);
+    return html`${path}<nav class="ts-sections" aria-label="Test sections">
+      <span class="ts-sections-label">Sections</span>
+      ${list.map((title) => {
+        const n = a.snapshot.questions.filter((q) => q.subject === title).length;
+        return html`<button type="button" class="ts-section-tab ${active === title ? 'is-active' : ''}" aria-pressed="${String(active === title)}" data-act="section" data-value="${title}">${title}<span class="t-num">${n}</span></button>`;
+      })}
+    </nav>`;
+  }
+
   function body(a) {
     const qs = a.snapshot.questions;
     const i = curIndex(a);
+    if (T.review && !visibleIndexes(a).length) return html`<div class="card review-empty"><h2 class="t-h3">No questions match these filters</h2><p class="t-body-sm t-muted">Choose another section or change the filter to continue.</p></div>`;
     const q = qs[i];
-    const chosen = a.answers[q.id];
-    const reviewChoice = a.reviewAnswers && a.reviewAnswers[q.id];
-    const reviewed = T.review && reviewChoice != null;
-    const st = qState(a, q, i);
     const l = lang();
-    const opts = q[l].options.map((o, k) => {
-      let cls = '', note = '';
-      if (T.review) {
-        if (reviewed) {
-          if (k === q.correctIndex) { cls = 'is-correct'; note = 'Correct answer'; }
-          else if (k === reviewChoice && k === chosen) { cls = 'is-wrong'; note = 'First answer · Current answer'; }
-          else if (k === chosen) { cls = 'is-wrong'; note = 'First answer'; }
-          else if (k === reviewChoice) { cls = 'is-selected'; note = 'Current review answer'; }
-        }
-      } else if (k === chosen) cls = 'is-selected';
-      return html`<button type="button" class="opt ${cls}" role="radio" aria-checked="${String((T.review ? reviewChoice : chosen) === k)}" data-act="choose" data-i="${k}">
-        <span class="opt-key">${BP.content.LETTERS[k]}</span><span class="opt-text"${L()}>${o}</span>
-        ${note ? html`<span class="opt-note">${icon(cls === 'is-correct' ? 'check-circle' : 'x-circle')}${note}</span>` : ''}
-      </button>`;
-    });
-    const reviewPill = { correct: ['success', 'Correct'], wrong: ['error', 'Wrong'], unvisited: ['neutral', 'To review'] }[st];
+    return T.review ? reviewBody(a, q, i, l) : testBody(a, q, i, l);
+  }
+
+  function testBody(a, q, i, l) {
+    const chosen = a.answers[q.id];
+    const opts = q[l].options.map((o, k) => html`<button type="button" class="opt ${k === chosen ? 'is-selected' : ''}" role="radio" aria-checked="${String(chosen === k)}" data-act="choose" data-i="${k}">
+        <span class="opt-key">${BP.content.LETTERS[k]}</span><span class="opt-text"${L()}>${o}</span></button>`);
     return html`<div class="ts-qhead">
-        <span class="t-label t-muted">Question ${i + 1} of ${qs.length}${q.subject ? ' · ' + q.subject : ''}</span>
-        ${T.review ? html`<span class="row-wrap gap-2">${BP.ui.pill(reviewPill[0], reviewPill[1])}<span class="t-caption">Time spent ${fmtTime(a.questionTimeSec && a.questionTimeSec[q.id])}</span></span>` : html`<span class="saved" id="ts-saved" aria-live="polite"></span>`}
+        <div class="ts-question-index"><span class="ts-qno">Question ${i + 1}</span><span class="t-caption t-muted">of ${a.snapshot.questions.length}</span></div>
+        <span class="saved" id="ts-saved" aria-live="polite"></span>
         <span class="grow"></span>
-        ${T.review ? '' : html`<button type="button" class="btn btn--dark btn--sm ts-submit-inline" data-act="submit">${icon('send')}Submit</button>`}
+        <div class="ts-question-marks" aria-label="Marks for this question">
+          <span class="ts-marks-label">Marks</span>
+          <span class="ts-mark ts-mark--plus" title="For a correct answer">+${BP.scoring.fmt(a.snapshot.marksPerQuestion)}</span>
+          ${a.snapshot.negativeMarking ? html`<span class="ts-mark ts-mark--minus" title="For a wrong answer">−${BP.scoring.fmt(a.snapshot.negativeValue)}</span>` : ''}
+        </div>
+        <button type="button" class="btn btn--secondary btn--sm ts-submit-inline" data-act="submit">${icon('send')}Submit</button>
       </div>
       <div class="ts-card">
         <p class="ts-qtext"${L()} id="ts-q">${q[l].text}</p>
         <div class="opts" role="radiogroup" aria-labelledby="ts-q">${opts}</div>
-        ${T.review ? (reviewed ? html`<div class="review-feedback stack gap-3">
-          <div class="row-wrap gap-2"><span class="review-answer ${chosen == null ? 'review-answer--warning' : chosen === q.correctIndex ? 'review-answer--correct' : 'review-answer--first'}"${L()}>First answer: ${chosen == null ? 'Skipped' : BP.content.LETTERS[chosen] + ' · ' + q[l].options[chosen]}</span>
-            <span class="review-answer ${reviewChoice === q.correctIndex ? 'review-answer--correct' : 'review-answer--current'}"${L()}>Current review: ${BP.content.LETTERS[reviewChoice]} · ${q[l].options[reviewChoice]}</span>
-            <span class="review-answer review-answer--correct"${L()}>Correct answer: ${BP.content.LETTERS[q.correctIndex]} · ${q[l].options[q.correctIndex]}</span></div>
-          <div class="notice ${reviewChoice === q.correctIndex ? 'notice--success' : 'notice--info'}">${icon('lightbulb')}<span><b>Explanation</b><br><span${L()}>${q[l].explanation || 'No explanation was added for this question.'}</span></span></div>
-        </div>` : html`<p class="t-caption review-hint">Choose an option to compare your first answer with this review answer and reveal the explanation.</p>`) : ''}
+        <p class="ts-answer-hint">${icon('check-circle')}Answers save automatically. Tap a chosen answer again or use Clear response to remove it.</p>
       </div>`;
   }
 
-  function fmtTime(seconds) {
-    if (seconds == null) return '—';
-    const s = Math.max(0, Number(seconds) || 0);
-    return s >= 60 ? Math.floor(s / 60) + 'm ' + String(s % 60).padStart(2, '0') + 's' : s + 's';
+  function reviewBody(a, q, i, l) {
+    const chosen = a.answers[q.id];
+    const reAns = a.reviewAnswers ? a.reviewAnswers[q.id] : undefined;
+    const reattempting = T.reattempt && reAns == null && !T.revealed[q.id];
+    const st = reviewCategory(a, q);
+    const pct = correctPct(q);
+    const speed = reviewSpeed(a, q);
+    const speedMeta = SPEEDS.find((s) => s[0] === speed);
+    const scoreLabel = st === 'correct' ? '+' + BP.scoring.fmt(a.snapshot.marksPerQuestion) : st === 'incorrect' && a.snapshot.negativeMarking ? '−' + BP.scoring.fmt(a.snapshot.negativeValue) : '0';
+    const tagsFor = (k) => {
+      const t = [];
+      if (!reattempting && k === q.correctIndex) t.push(html`<span class="opt-tag opt-tag--stat">${pct}% answered correctly</span>`);
+      if (k === chosen) t.push(html`<span class="opt-tag opt-tag--you">${reAns != null ? 'Your first attempt' : 'Your answer'}</span>`);
+      if (!reattempting && reAns != null && k === reAns) t.push(html`<span class="opt-tag opt-tag--you">Your re-attempt</span>`);
+      return t;
+    };
+    const opts = q[l].options.map((o, k) => {
+      const tags = tagsFor(k);
+      if (reattempting) {
+        return html`<button type="button" class="opt" role="radio" aria-checked="false" data-act="reattempt-choose" data-i="${k}">
+          <span class="opt-key">${BP.content.LETTERS[k]}</span><span class="opt-text"${L()}>${o}</span>${tags.length ? html`<span class="opt-tags">${tags}</span>` : ''}</button>`;
+      }
+      const isRight = k === q.correctIndex;
+      const isWrong = !isRight && (k === chosen || (reAns != null && k === reAns));
+      const cls = isRight ? 'is-correct' : isWrong ? 'is-wrong' : 'is-dim';
+      const key = isRight ? icon('check') : isWrong ? icon('x') : BP.content.LETTERS[k];
+      return html`<div class="opt ${cls}" role="listitem"><span class="opt-key">${key}</span><span class="opt-text"${L()}>${o}</span>${tags.length ? html`<span class="opt-tags">${tags}</span>` : ''}
+        <span class="visually-hidden">${isRight ? ', correct answer' : isWrong ? ', wrong answer' : ''}</span></div>`;
+    });
+    const statusLabel = { correct: 'Correct', incorrect: 'Incorrect', unattempted: 'Unattempted' }[st];
+    return html`<div class="ts-qhead ts-qhead--review">
+        <span class="ts-qno">Question ${i + 1}</span>
+        <span class="rv-status rv-status--${st}">${statusLabel}</span>
+        <span class="rv-sep" aria-hidden="true"></span>
+        <span class="rv-time ${speed ? 'rv-time--' + speed : ''}" ${speedMeta ? raw('title="' + speedMeta[1] + '"') : ''}>${icon(speedMeta ? speedMeta[2] : 'clock')}<span>You: <b class="t-num">${mmss(questionTime(a, q))}</b></span><span class="rv-avg">Avg: <b class="t-num">${mmss(avgTime(q))}</b></span></span>
+        <span class="rv-sep" aria-hidden="true"></span>
+        <span class="rv-marks">Marks <b class="rv-marks-val rv-marks-val--${st}">${scoreLabel}</b></span>
+        <span class="rv-pct">${pct}% answered correctly</span>
+      </div>
+      <div class="ts-card">
+        <p class="ts-qtext"${L()} id="ts-q">${q[l].text}</p>
+        <div class="opts" ${reattempting ? raw('role="radiogroup" aria-labelledby="ts-q"') : raw('role="list" aria-label="Answer review"')}>${opts}</div>
+        ${reattempting ? html`<div class="reattempt-box" role="status">
+            <span class="reattempt-ic">${icon('refresh')}</span>
+            <span class="grow"><b>Re-attempt mode is on</b><span class="t-caption block">Choose an answer to try this question again.</span></span>
+            <button type="button" class="btn btn--secondary btn--sm" data-act="view-solution">${icon('eye')}View solution</button>
+          </div>`
+          : html`<section class="solution" aria-label="Solution">
+            <h3 class="solution-title">Solution</h3>
+            ${chosen == null ? html`<p class="solution-note">${icon('info')}You did not answer this question.</p>` : ''}
+            <p class="solution-answer">The correct answer is <b${L()}>${BP.content.LETTERS[q.correctIndex]}. ${q[l].options[q.correctIndex]}</b></p>
+            <p class="solution-text"${L()}>${q[l].explanation || 'No explanation was added for this question.'}</p>
+          </section>`}
+      </div>`;
   }
 
   function foot(a) {
     const i = curIndex(a), n = a.snapshot.questions.length;
+    const q = a.snapshot.questions[i];
     if (T.review) {
-      return html`<button type="button" class="btn btn--secondary" data-act="prev" ${i === 0 ? 'disabled' : ''}>${icon('arrow-left')}<span class="hide-xs">Previous</span></button>
-        <a class="btn btn--ghost" href="#/user/attempt/${a.id}/result">Back to result</a>
-        <button type="button" class="btn btn--primary" data-act="next" ${i === n - 1 ? 'disabled' : ''}><span class="hide-xs">Next</span>${icon('arrow-right')}</button>`;
+      const list = visibleIndexes(a);
+      const pos = list.indexOf(i);
+      return html`<button type="button" class="btn btn--secondary ts-nav-prev" data-act="prev" ${pos <= 0 ? 'disabled' : ''} aria-label="Previous question">${icon('arrow-left')}<span class="hide-xs">Previous</span></button>
+        <label class="ts-reattempt-toggle">
+          <span class="ts-reattempt-label">Re-attempt<span class="hide-xs"> questions</span></span>
+          <button type="button" class="ts-switch" role="switch" aria-checked="${String(!!T.reattempt)}" data-act="toggle-reattempt" aria-label="Re-attempt questions"><span class="ts-switch-knob"></span></button>
+        </label>
+        <button type="button" class="btn btn--primary ts-nav-next" data-act="next" ${pos < 0 || pos === list.length - 1 ? 'disabled' : ''}><span class="hide-xs">Next</span>${icon('arrow-right')}</button>`;
     }
-    return html`<button type="button" class="btn btn--secondary" data-act="prev" ${i === 0 ? 'disabled' : ''}>${icon('arrow-left')}<span class="hide-xs">Previous</span></button>
-      <button type="button" class="btn btn--ghost" data-act="skip">Skip</button>
-      ${i === n - 1 ? html`<button type="button" class="btn btn--primary" data-act="submit">Finish${icon('check')}</button>`
-        : html`<button type="button" class="btn btn--primary" data-act="next">Next${icon('arrow-right')}</button>`}`;
+    const marked = (a.markedQuestions || []).includes(q.id);
+    const hasAnswer = a.answers[q.id] != null;
+    return html`<div class="ts-foot-group">
+        <button type="button" class="btn btn--secondary ts-mark-button ${marked ? 'is-marked' : ''}" data-act="toggle-mark" aria-pressed="${String(marked)}">${icon('flag')}<span class="hide-xs">${marked ? 'Marked for review' : 'Mark for review'}</span><span class="mobile-mark-label">${marked ? 'Marked' : 'Mark'}</span></button>
+        <button type="button" class="btn btn--ghost ts-clear" data-act="clear" ${hasAnswer ? '' : 'disabled'}>${icon('eraser')}<span class="hide-xs">Clear response</span><span class="mobile-mark-label">Clear</span></button>
+      </div>
+      <div class="ts-foot-group">
+        <button type="button" class="btn btn--secondary ts-nav-prev" data-act="prev" ${i === 0 ? 'disabled' : ''} aria-label="Previous question">${icon('arrow-left')}<span class="hide-sm">Previous</span></button>
+        ${i === n - 1 ? html`<button type="button" class="btn btn--primary ts-nav-next" data-act="submit">Finish${icon('check')}</button>`
+          : html`<button type="button" class="btn btn--primary ts-nav-next" data-act="next">${hasAnswer ? 'Save & next' : 'Next'}${icon('arrow-right')}</button>`}
+      </div>`;
   }
 
-  /** The question-progress panel: counts, a proportion bar and every question as a jump button. */
+  /** Small shaped marker used in the palette and its legend. */
+  const shape = (st, content, cls) => html`<span class="pal-shape pal--${st} ${cls || ''}" aria-hidden="true">${content}</span>`;
+
+  /** The palette panel: who is taking it, legend with counts, the question grid, the panel action. */
   function panel(a) {
-    const qs = a.snapshot.questions, n = qs.length, i = curIndex(a), c = counts(a);
-    const stats = T.review
-      ? [['correct', 'Correct', c.correct], ['wrong', 'Wrong', c.wrong], ['unvisited', 'To review', c.unvisited]]
-      : [['answered', 'Attempted', c.answered], ['skipped', 'Skipped', c.skipped], ['unvisited', 'Remaining', c.unvisited]];
+    const qs = a.snapshot.questions, i = curIndex(a);
+    const indexes = visibleIndexes(a);
+    const c = counts(a);
+    const name = userName();
+    const legend = T.review
+      ? [['correct', 'Correct', c.correct], ['incorrect', 'Incorrect', c.incorrect], ['unattempted', 'Unattempted', c.unattempted]]
+      : [['answered', 'Answered', c.answered], ['notanswered', 'Not answered', c.notanswered], ['marked', 'Marked', c.marked], ['marked-answered', 'Marked and answered', c['marked-answered']], ['unvisited', 'Not visited', c.unvisited]];
+    const filterDraft = T.filterDraft || T.filters;
+    const speed = T.review ? speedCounts(a) : null;
+    const groupTitle = hasSections(a) ? (T.section || sectionForQuestion(qs[i])) : 'All questions';
     return html`<div class="tp">
       <div class="tp-head">
-        <h2 class="tp-title">${T.review ? 'Answer summary' : 'Your progress'}</h2>
-        <span class="tp-sub t-num">${T.review ? c.correct + ' of ' + n + ' correct' : c.answered + ' of ' + n + ' attempted'}</span>
-        <button type="button" class="icon-btn tp-close" data-act="close-progress" aria-label="Close your progress">${icon('x')}</button>
+        ${BP.ui.avatar(name, 'avatar--sm')}<span class="tp-user">${name}</span>
+        ${T.review ? html`<button type="button" class="tp-filter-trigger ${T.filterOpen ? 'is-open' : ''} ${Object.values(T.filters).every(Boolean) ? '' : 'is-active'}" data-act="toggle-filters" aria-expanded="${String(!!T.filterOpen)}" aria-controls="tp-filter-popover">${icon('filter')}Filter</button>` : ''}
+        <button type="button" class="icon-btn icon-btn--plain tp-close" data-act="close-progress" aria-label="Close">${icon('x')}</button>
       </div>
-      <div class="tp-stats" role="status" aria-live="polite">${stats.map((s) => html`<div class="tp-stat tp-stat--${s[0]}"><b class="t-num">${s[2]}</b><span>${s[1]}</span></div>`)}</div>
-      <div class="tp-bar" aria-hidden="true">${stats.map((s) => (s[2] ? html`<span class="tp-seg tp-seg--${s[0]}" style="flex-grow:${s[2]}"></span>` : ''))}</div>
-      ${qs.some((q) => q.subject) ? subjectGroups(qs).map((g) => html`<section class="tp-subject-group"><button type="button" class="tp-subject-title" data-act="jump" data-i="${g.start}">${g.title}<span>${g.items.length}</span></button><div class="tp-grid" role="group" aria-label="${g.title} questions">${g.items.map(({ q, k }) => {
-        const st = qState(a, q, k);
-        return html`<button type="button" class="pal pal--${st} ${k === i ? 'is-current' : ''}" data-act="jump" data-i="${k}" ${k === i ? raw('aria-current="step"') : ''} aria-label="Question ${k + 1}, ${stateLabel(st)}">${k + 1}</button>`;
-      })}</div></section>`) : html`<div class="tp-grid" role="group" aria-label="Go to a question">${qs.map((q, k) => { const st = qState(a, q, k); return html`<button type="button" class="pal pal--${st} ${k === i ? 'is-current' : ''}" data-act="jump" data-i="${k}" ${k === i ? raw('aria-current="step"') : ''} aria-label="Question ${k + 1}, ${stateLabel(st)}">${k + 1}</button>`; })}</div>`}
-      ${T.review ? '' : html`<button type="button" class="btn btn--dark btn--block tp-submit" data-act="submit">${icon('send')}Submit test</button>`}
+      ${T.review && T.filterOpen ? html`<section class="tp-filters" id="tp-filter-popover" aria-label="Filter questions by result">
+        <div class="tp-filters-head"><h3>Show questions</h3><button type="button" class="tp-filter-reset" data-act="reset-filters">Reset</button></div>
+        ${legend.map(([key, label, count]) => html`<button type="button" class="tp-filter" data-act="toggle-filter-draft" data-value="${key}" aria-pressed="${String(!!filterDraft[key])}"><span class="tp-filter-check" aria-hidden="true">${filterDraft[key] ? icon('check') : ''}</span>${shape(key, '', 'pal-shape--xs')}<span>${label}</span><b class="t-num">${count}</b></button>`)}
+        <button type="button" class="btn btn--primary btn--sm btn--block" data-act="apply-filters">Apply</button>
+      </section>` : ''}
+      <div class="tp-legend" role="status" aria-live="polite" aria-label="Question status counts">
+        ${legend.map(([key, label, count]) => html`<span class="tp-legend-item">${shape(key, count, 'pal-shape--sm t-num')}<span>${label}</span></span>`)}
+      </div>
+      ${T.review ? html`<section class="tp-speed" aria-labelledby="tp-speed-title"><h3 id="tp-speed-title" class="tp-section-label">Speed indicators</h3><div class="tp-speed-grid">
+        ${SPEEDS.map(([key, label, ic]) => html`<div class="tp-speed-item tp-speed-item--${key}">${icon(ic)}<span class="tp-speed-label">${label}</span><b class="t-num">${speed[key]}</b></div>`)}
+      </div></section>` : ''}
+      <div class="tp-group-head"><span>${hasSections(a) ? html`Section: <b>${groupTitle}</b>` : html`<b>${groupTitle}</b>`}</span><span class="t-num">${indexes.length}</span></div>
+      <div class="tp-grid" role="group" aria-label="Go to a question">${indexes.map((k) => {
+        const st = qState(a, qs[k], k);
+        return html`<button type="button" class="pal pal--${st} ${k === i ? 'is-current' : ''}" data-act="jump" data-i="${k}" ${k === i ? raw('aria-current="step"') : ''} aria-label="Question ${k + 1}, ${STATE_LABEL[st]}">${k + 1}</button>`;
+      })}</div>
+      <div class="tp-foot">
+        ${T.review ? html`<a class="btn btn--secondary btn--block" href="#/user/attempt/${a.id}/result">${icon('list-checks')}Score summary</a>`
+          : html`<button type="button" class="btn btn--primary btn--block tp-submit" data-act="submit">${icon('send')}Submit test</button>`}
+      </div>
     </div>`;
-  }
-
-  function subjectGroups(qs) {
-    const groups = [];
-    qs.forEach((q, k) => {
-      const title = q.subject || 'Questions';
-      let g = groups.find((x) => x.title === title);
-      if (!g) { g = { title, start: k, items: [] }; groups.push(g); }
-      g.items.push({ q, k });
-    });
-    return groups;
   }
 
   function draw() {
     const a = attempt();
     if (!a) return;
+    document.getElementById('ts-sections').innerHTML = String(sections(a));
     document.getElementById('ts-body').innerHTML = String(body(a));
     document.getElementById('ts-foot').innerHTML = String(foot(a));
     document.getElementById('ts-panel').innerHTML = String(panel(a));
     syncProgressDrawer();
     const c = counts(a);
-    const pct = T.review ? (curIndex(a) + 1) / a.snapshot.questions.length * 100 : c.answered / a.snapshot.questions.length * 100;
+    const n = a.snapshot.questions.length;
+    const pct = T.review ? (curIndex(a) + 1) / n * 100 : answeredCount(c) / n * 100;
     document.getElementById('ts-bar').style.width = pct + '%';
-    // Phones: keep the current question visible in the horizontal strip.
-    const cur = document.querySelector('.tp-grid .is-current');
-    const strip = cur && cur.closest('.tp-grid');
-    if (cur && strip.scrollWidth > strip.clientWidth) strip.scrollLeft = cur.offsetLeft - (strip.clientWidth - cur.offsetWidth) / 2;
+    const trigger = document.querySelector('.ts-progress-trigger');
+    if (trigger) {
+      const count = trigger.querySelector('.ts-progress-count');
+      if (count) count.textContent = (curIndex(a) + 1) + '/' + n;
+      trigger.setAttribute('aria-label', T.review ? 'Open answer summary' : 'Open question palette, question ' + (curIndex(a) + 1) + ' of ' + n);
+    }
   }
 
   function syncProgressDrawer() {
@@ -203,7 +343,7 @@
     if (a.status !== 'in_progress') { toResult(a.id); return; }
     const left = Math.max(0, Math.ceil((a.expiresAt - Date.now()) / 1000));
     const t = document.getElementById('ts-timer');
-    document.getElementById('ts-time').textContent = mmss(left);
+    document.getElementById('ts-time').textContent = clock(left);
     t.classList.toggle('is-warn', left <= 300 && left > 60);
     t.classList.toggle('is-danger', left <= 60);
     [[300, 'Five minutes left'], [60, 'One minute left']].forEach(([s, msg]) => {
@@ -230,7 +370,7 @@
     o.setAttribute('aria-labelledby', 'ts-ov-title');
     o.innerHTML = String(html`<div class="ts-overlay-card">
       <span class="spinner spinner--lg" aria-hidden="true"></span>
-      <h2 class="t-h2" id="ts-ov-title">Reconnecting… <span id="ts-grace" class="t-num">1:00</span></h2>
+      <h2 class="t-h2" id="ts-ov-title">Reconnecting… <span id="ts-grace" class="t-num">01:00</span></h2>
       <p class="t-body t-muted">Your answers are saved. If the connection comes back before the countdown ends, you continue exactly where you left off. Otherwise the test is submitted with your saved answers.</p>
       <button type="button" class="btn btn--primary btn--block" data-act="reconnect">${icon('wifi')}Connection restored</button>
       <p class="t-caption">Demo button: simulates the internet coming back.</p>
@@ -275,40 +415,55 @@
     document.body.classList.remove('ts-progress-open');
   }
 
+  function flashSaved(text) {
+    const s = document.getElementById('ts-saved');
+    if (s) { s.innerHTML = BP.icon('check') + text; s.classList.add('is-on'); clearTimeout(T.savedT); T.savedT = setTimeout(() => s.classList.remove('is-on'), 1600); }
+  }
   function choose(k) {
     const a = attempt();
     const q = a.snapshot.questions[curIndex(a)];
-    E().answer(a.id, q.id, a.answers[q.id] === k ? null : k); // tap again to clear
+    const clearing = a.answers[q.id] === k;
+    E().answer(a.id, q.id, clearing ? null : k); // tap again to clear
     draw();
-    const s = document.getElementById('ts-saved');
-    if (s) { s.innerHTML = BP.icon('check') + 'Saved'; s.classList.add('is-on'); clearTimeout(T.savedT); T.savedT = setTimeout(() => s.classList.remove('is-on'), 1600); }
+    flashSaved(clearing ? 'Cleared' : 'Saved');
   }
   function move(d) {
     const a = attempt();
-    const n = a.snapshot.questions.length;
-    const i = Math.min(n - 1, Math.max(0, curIndex(a) + d));
-    goTo(i);
+    const list = T.review ? visibleIndexes(a) : a.snapshot.questions.map((q, i) => i);
+    if (!list.length) return;
+    const pos = list.indexOf(curIndex(a));
+    goTo(list[Math.min(list.length - 1, Math.max(0, (pos < 0 ? 0 : pos) + d))]);
   }
   function goTo(i) {
     const a = attempt();
     if (T.review) T.index = i; else E().visit(a.id, i);
+    if (hasSections(a)) T.section = sectionForQuestion(a.snapshot.questions[i]);
     draw();
-    window.scrollTo(0, 0);
     const q = document.getElementById('ts-q'); if (q) { q.setAttribute('tabindex', '-1'); q.focus({ preventScroll: true }); }
+    window.scrollTo(0, 0);
   }
 
+  /** Submit confirmation: a per-section summary table, like the exam hall's final check. */
   function confirmSubmit() {
     const a = attempt();
-    const c = counts(a);
+    const qs = a.snapshot.questions;
+    const groups = hasSections(a) ? sectionList(a).map((title) => ({ title, idx: qs.map((q, k) => k).filter((k) => qs[k].subject === title) })) : [{ title: 'All questions', idx: qs.map((q, k) => k) }];
+    const rows = groups.map((g) => { const c = counts(a, g.idx); return { title: g.title, n: g.idx.length, ans: answeredCount(c), not: c.notanswered, marked: c.marked + c['marked-answered'], unvisited: c.unvisited }; });
+    const tot = rows.reduce((t, r) => ({ n: t.n + r.n, ans: t.ans + r.ans, not: t.not + r.not, marked: t.marked + r.marked, unvisited: t.unvisited + r.unvisited }), { n: 0, ans: 0, not: 0, marked: 0, unvisited: 0 });
+    const unanswered = tot.n - tot.ans;
+    const left = Math.max(0, Math.ceil((a.expiresAt - Date.now()) / 1000));
+    const cell = (v, kind) => html`<td class="t-num ${v && kind ? 'sum-cell--' + kind : ''}">${v}</td>`;
     BP.ui.sheet({
       title: 'Submit your test?',
+      size: 'wide',
       body: html`<div class="stack gap-4">
-        <div class="submit-counts">
-          <div class="sc sc--answered"><b>${c.answered}</b><span>Attempted</span></div>
-          <div class="sc sc--skipped"><b>${c.skipped}</b><span>Skipped</span></div>
-          <div class="sc sc--unvisited"><b>${c.unvisited}</b><span>Remaining</span></div>
-        </div>
-        ${c.skipped + c.unvisited ? html`<div class="notice notice--warning">${icon('alert-triangle')}<span>${c.skipped + c.unvisited} ${c.skipped + c.unvisited === 1 ? 'question is' : 'questions are'} not answered. You cannot change answers after submitting.</span></div>`
+        <p class="t-body-sm t-muted">You have <b class="t-strong t-num">${clock(left)}</b> left. Check your summary before you submit.</p>
+        <div class="sum-table-wrap"><table class="sum-table">
+          <thead><tr><th scope="col">Section</th><th scope="col">Questions</th><th scope="col">Answered</th><th scope="col">Not answered</th><th scope="col">Marked for review</th><th scope="col">Not visited</th></tr></thead>
+          <tbody>${rows.map((r) => html`<tr><th scope="row">${r.title}</th><td class="t-num">${r.n}</td>${cell(r.ans, 'answered')}${cell(r.not, 'notanswered')}${cell(r.marked, 'marked')}${cell(r.unvisited)}</tr>`)}</tbody>
+          ${rows.length > 1 ? html`<tfoot><tr><th scope="row">Total</th><td class="t-num">${tot.n}</td><td class="t-num">${tot.ans}</td><td class="t-num">${tot.not}</td><td class="t-num">${tot.marked}</td><td class="t-num">${tot.unvisited}</td></tr></tfoot>` : ''}
+        </table></div>
+        ${unanswered ? html`<div class="notice notice--warning">${icon('alert-triangle')}<span>${unanswered} ${unanswered === 1 ? 'question is' : 'questions are'} not answered. You cannot change answers after submitting.</span></div>`
           : html`<div class="notice notice--success">${icon('check-circle')}<span>You have answered every question.</span></div>`}
       </div>`,
       foot: html`<button type="button" class="btn btn--secondary" data-act="close">Keep answering</button><button type="button" class="btn btn--primary" data-act="go">${icon('send')}Submit test</button>`,
@@ -316,12 +471,28 @@
     });
   }
 
+  function userName() {
+    try {
+      const u = BP.store.byId('users', BP.store.state.session.userId);
+      return u ? u.name : 'User';
+    } catch (e) { return 'User'; }
+  }
+
   const actions = {
-    choose(el) {
-      const a = attempt(), q = a.snapshot.questions[curIndex(a)], value = Number(el.dataset.i);
-      if (T.review) { E().reviewAnswer(a.id, q.id, value); draw(); }
-      else choose(value);
+    choose(el) { if (!T.review) choose(Number(el.dataset.i)); },
+    clear() {
+      const a = attempt(), q = a.snapshot.questions[curIndex(a)];
+      if (a.answers[q.id] == null) return;
+      E().answer(a.id, q.id, null);
+      draw();
+      flashSaved('Cleared');
     },
+    'reattempt-choose'(el) {
+      const a = attempt(), q = a.snapshot.questions[curIndex(a)], value = Number(el.dataset.i);
+      if (T.review && T.reattempt) { E().reviewAnswer(a.id, q.id, value); draw(); }
+    },
+    'toggle-reattempt'() { T.reattempt = !T.reattempt; draw(); },
+    'view-solution'() { const a = attempt(); T.revealed[a.snapshot.questions[curIndex(a)].id] = true; draw(); },
     prev() { move(-1); },
     next() { move(1); },
     skip() {
@@ -329,6 +500,17 @@
       if (curIndex(a) === a.snapshot.questions.length - 1) confirmSubmit(); else move(1);
     },
     jump(el) { goTo(Number(el.dataset.i)); if (window.matchMedia('(max-width: 1023.98px)').matches) setProgressOpen(false, false); },
+    section(el) {
+      const a = attempt(), title = el.dataset.value;
+      const first = a.snapshot.questions.findIndex((q) => sectionForQuestion(q) === title && (!T.review || T.filters[reviewCategory(a, q)]));
+      T.section = title;
+      if (first >= 0) goTo(first); else draw();
+    },
+    'toggle-mark'() { const a = attempt(), q = a.snapshot.questions[curIndex(a)]; E().toggleMark(a.id, q.id); draw(); },
+    'toggle-filters'() { T.filterOpen = !T.filterOpen; T.filterDraft = Object.assign({}, T.filters); draw(); },
+    'toggle-filter-draft'(el) { const key = el.dataset.value; T.filterDraft[key] = !T.filterDraft[key]; draw(); },
+    'reset-filters'() { T.filterDraft = { correct: true, incorrect: true, unattempted: true }; draw(); },
+    'apply-filters'() { const a = attempt(); T.filters = Object.assign({}, T.filterDraft); T.filterOpen = false; const allowed = visibleIndexes(a); if (allowed.length && !allowed.includes(curIndex(a))) T.index = allowed[0]; draw(); },
     'toggle-progress'() { setProgressOpen(!T.progressOpen); },
     'close-progress'() { setProgressOpen(false); },
     submit: confirmSubmit,
@@ -346,7 +528,7 @@
       const a = E().get(ctx.params.attemptId);
       if (!a || a.userId !== ctx.user.id) return BP.views.notFound.render();
       if (a.status !== 'in_progress') { setTimeout(() => toResult(a.id)); return ''; }
-      T = { attemptId: a.id, review: false, announced: {} };
+      T = { attemptId: a.id, review: false, section: hasSections(a) ? sectionForQuestion(a.snapshot.questions[a.current || 0]) : null, announced: {}, revealed: {} };
       return frame(ctx, a);
     },
     mount(root, ctx) { const a = E().get(ctx.params.attemptId); if (a && a.status === 'in_progress') mountScreen(root, ctx, false); },
@@ -359,13 +541,23 @@
     render(ctx) {
       const a = E().get(ctx.params.attemptId);
       if (!a || a.userId !== ctx.user.id || !a.result) return BP.views.notFound.render();
-      T = { attemptId: a.id, review: true, index: Math.max(0, Math.min(a.snapshot.questions.length - 1, (Number(ctx.query.q) || 1) - 1)), announced: {} };
+      const index = Math.max(0, Math.min(a.snapshot.questions.length - 1, (Number(ctx.query.q) || 1) - 1));
+      T = { attemptId: a.id, review: true, index, section: hasSections(a) ? sectionForQuestion(a.snapshot.questions[index]) : null, filters: { correct: true, incorrect: true, unattempted: true }, filterDraft: { correct: true, incorrect: true, unattempted: true }, filterOpen: false, reattempt: true, announced: {}, revealed: {} };
       return frame(ctx, a);
     },
     mount(root, ctx) { if (T && T.review) mountScreen(root, ctx, true); },
     unmount: unmountScreen,
     actions,
   });
+
+  /* Shared with the result page: sections and per-question time for the sectional summary. */
+  BP.testSections = function (a) {
+    const qs = a.snapshot.questions;
+    const titles = [];
+    qs.forEach((q) => { if (q.subject && !titles.includes(q.subject)) titles.push(q.subject); });
+    if (titles.length < 2) return [{ title: 'Full test', questions: qs }];
+    return titles.map((title) => ({ title, questions: qs.filter((q) => q.subject === title) }));
+  };
 
   // Demo panel: simulate connection loss during a running test.
   BP.demo.hooks.connectionLoss = function () {

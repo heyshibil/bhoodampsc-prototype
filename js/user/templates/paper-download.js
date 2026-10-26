@@ -39,7 +39,7 @@
             ${iconTile(locked ? 'lock' : 'file-text', p.isPremium ? 'accent' : '')}
             <span class="lr-main"><span class="lr-title">${p.title}</span><span class="lr-meta">PDF · ${kb(p.fileSize)} · ${p.year}</span><span class="row-wrap gap-2 lr-tags">${BP.u.accessTag(p, ctx.user)}</span></span>
             <span class="lr-end">
-              ${locked ? html`<button type="button" class="btn btn--secondary btn--sm" data-act="unlock" aria-label="Unlock ${p.title}">${icon('crown')}<span class="hide-xs">Unlock</span></button>`
+              ${locked ? html`<button type="button" class="btn btn--secondary btn--sm" data-act="unlock" aria-label="Unlock ${p.title}">${icon('unlock')}<span class="hide-xs">Unlock</span></button>`
                 : html`<button type="button" class="btn btn--primary btn--sm" data-act="download" data-id="${p.id}" aria-label="Download ${p.title}">${icon('download')}<span class="hide-xs">Download</span></button>`}
             </span>
           </div>`;

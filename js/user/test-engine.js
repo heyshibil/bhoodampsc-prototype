@@ -35,7 +35,7 @@
         questions: BP.content.clone(t.questions),
       },
       answers: {}, visited: [t.questions[0].id], current: 0,
-      questionTimeMs: {}, activeQuestionStartedAt: now, reviewAnswers: {},
+      questionTimeMs: {}, activeQuestionStartedAt: now, reviewAnswers: {}, markedQuestions: [],
       startedAt: now, expiresAt: now + t.durationMin * 60000, lastHeartbeat: now,
       status: 'in_progress', autoReason: null, submittedAt: null, result: null,
     };
@@ -121,6 +121,18 @@
       a.reviewAnswers[qid] = index;
     }, { silent: true });
   }
+  function toggleMark(attemptId, qid) {
+    let marked = false;
+    BP.store.update((s) => {
+      const a = s.attempts.find((x) => x.id === attemptId);
+      if (!a || a.status !== 'in_progress') return;
+      a.markedQuestions = a.markedQuestions || [];
+      if (a.markedQuestions.includes(qid)) a.markedQuestions = a.markedQuestions.filter((id) => id !== qid);
+      else a.markedQuestions.push(qid);
+      marked = a.markedQuestions.includes(qid);
+    }, { silent: true });
+    return marked;
+  }
 
   // Background sweep: catches tests left open elsewhere in the app.
   setInterval(() => {
@@ -134,5 +146,5 @@
     if (!done.some((a) => a.id === viewing)) BP.router.refresh();
   }, 5000);
 
-  BP.engine = { start, get, inProgress, answer, visit, finalize, sweep, beat, lastBeat, goOffline, reconnect, isOffline, graceLeft, reviewAnswer };
+  BP.engine = { start, get, inProgress, answer, visit, finalize, sweep, beat, lastBeat, goOffline, reconnect, isOffline, graceLeft, reviewAnswer, toggleMark };
 })();

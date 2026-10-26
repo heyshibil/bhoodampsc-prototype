@@ -97,6 +97,12 @@
     zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/>',
     ghost: '<path d="M5 21V11a7 7 0 0 1 14 0v10l-2.3-1.6-2.4 1.6-2.3-1.6-2.3 1.6-2.4-1.6L5 21Z"/><path d="M9.5 11h.01M14.5 11h.01"/>',
     terminal: '<path d="m4 17 6-5-6-5M12 19h8"/>',
+    eraser: '<path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5.6 5.6a1 1 0 0 1 0 1.4L13 21"/><path d="M22 21H7M5.5 11.5l7 7"/>',
+    /* Stopwatch faces for review speed indicators */
+    'speed-fast': '<circle cx="12" cy="13.5" r="7.5"/><path d="M10 2.5h4M12 2.5V6M18.5 6.5 17 8M9.5 12h.01M14.5 12h.01M9 15q3 3 6 0"/>',
+    'speed-ontime': '<circle cx="12" cy="13.5" r="7.5"/><path d="M10 2.5h4M12 2.5V6M18.5 6.5 17 8M9.5 12h.01M14.5 12h.01M9.8 15.6q2.2 1.6 4.4 0"/>',
+    'speed-slow': '<circle cx="12" cy="13.5" r="7.5"/><path d="M10 2.5h4M12 2.5V6M18.5 6.5 17 8M9.5 12h.01M14.5 12h.01M9.6 17q2.4-2 4.8 0"/>',
+    'speed-wrong': '<circle cx="12" cy="13.5" r="7.5"/><path d="M10 2.5h4M12 2.5V6M18.5 6.5 17 8M9.5 12h.01M14.5 12h.01M9.8 16.2h4.4"/>',
   };
 
   /** Icon names offered in the Admin card icon picker (exam-relevant only). */
@@ -111,6 +117,49 @@
     return '<svg class="' + (cls || '') + '" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + body + '</svg>';
   };
   BP.hasIcon = (name) => Object.prototype.hasOwnProperty.call(P, name);
+
+  /**
+   * Clock-face SVG illustrations for speed indicators on review screens.
+   * Each clock shows a different hand position to visually represent time spent.
+   * color: the accent color for the clock hands and border highlight.
+   */
+  BP.clockFace = function (speed) {
+    const configs = {
+      superfast: { color: '#15803D', handAngle: 30, label: '⚡' },
+      'on-time': { color: '#0A4FDC', handAngle: 90, label: '' },
+      slow: { color: '#B45309', handAngle: 240, label: '' },
+      'on-time-incorrect': { color: '#C62828', handAngle: 90, label: '✕' },
+    };
+    const cfg = configs[speed] || configs['on-time'];
+    const r = 15; // clock radius
+    const cx = 18, cy = 18;
+    // Convert angle to radians (12 o'clock = 0 deg, clockwise)
+    const rad = ((cfg.handAngle - 90) * Math.PI) / 180;
+    const hx = cx + r * 0.6 * Math.cos(rad);
+    const hy = cy + r * 0.6 * Math.sin(rad);
+    // Minute hand (shorter)
+    const mrad = ((cfg.handAngle * 3 - 90) * Math.PI) / 180;
+    const mx = cx + r * 0.4 * Math.cos(mrad);
+    const my = cy + r * 0.4 * Math.sin(mrad);
+    // Tick marks
+    let ticks = '';
+    for (let i = 0; i < 12; i++) {
+      const a = (i * 30 - 90) * Math.PI / 180;
+      const x1 = cx + (r - 2) * Math.cos(a);
+      const y1 = cy + (r - 2) * Math.sin(a);
+      const x2 = cx + (r - (i % 3 === 0 ? 5 : 3.5)) * Math.cos(a);
+      const y2 = cy + (r - (i % 3 === 0 ? 5 : 3.5)) * Math.sin(a);
+      ticks += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + (i % 3 === 0 ? '#4A4E55' : '#D3D6DB') + '" stroke-width="' + (i % 3 === 0 ? '1.5' : '1') + '" stroke-linecap="round"/>';
+    }
+    return '<svg class="clock-face" width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true" focusable="false">' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#fff" stroke="' + cfg.color + '" stroke-width="2"/>' +
+      ticks +
+      '<line x1="' + cx + '" y1="' + cy + '" x2="' + hx + '" y2="' + hy + '" stroke="' + cfg.color + '" stroke-width="2" stroke-linecap="round"/>' +
+      '<line x1="' + cx + '" y1="' + cy + '" x2="' + mx + '" y2="' + my + '" stroke="' + cfg.color + '" stroke-width="1.5" stroke-linecap="round"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="2" fill="' + cfg.color + '"/>' +
+      (speed === 'on-time-incorrect' ? '<text x="' + cx + '" y="' + (cy + 8) + '" text-anchor="middle" fill="' + cfg.color + '" font-size="7" font-weight="700">✕</text>' : '') +
+      '</svg>';
+  };
 
   /* ---------- Brand: the Boodham ghost ----------
      "Boodham" (ഭൂതം) means ghost. A friendly ghost with a scalloped hem, tilted slightly,

@@ -36,7 +36,7 @@
               </div>
             </header>
             ${cards.length ? html`<ul class="struct-cards" role="list">${cards.map((c, ci) => html`<li class="struct-card ${c.status === 'hidden' ? 'is-hidden' : ''}">
-                ${iconTile(c.icon, c.status === 'live' ? '' : 'neutral', 'sm')}
+                ${iconTile(c.icon, c.status === 'live' ? 'primary' : 'neutral', 'sm')}
                 <div class="grow stack gap-1">
                   <span class="row-wrap gap-2"><b class="t-strong">${c.title}</b>${BP.ui.cardPill(c.status)}</span>
                   <span class="row-wrap gap-2 t-caption">${BP.TEMPLATES[c.template].label} flow ${settingTags(c)} · ${contentCount(c)}</span>

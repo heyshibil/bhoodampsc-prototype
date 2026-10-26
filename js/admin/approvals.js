@@ -113,7 +113,7 @@
         ${hasAccess ? html`<fieldset class="stack gap-3"><legend class="field-label">Who can use it?</legend>
           <div class="choice-grid">
             <label class="choice"><input type="radio" name="ap-access" value="free" ${!item.isPremium ? 'checked' : ''}>${iconTile('check-circle', 'success', 'sm')}<span><span class="choice-title">Free</span><br><span class="choice-desc">Every user</span></span></label>
-            <label class="choice"><input type="radio" name="ap-access" value="premium" ${item.isPremium ? 'checked' : ''}>${iconTile('crown', 'accent', 'sm')}<span><span class="choice-title">Premium</span><br><span class="choice-desc">Subscribers only</span></span></label>
+            <label class="choice"><input type="radio" name="ap-access" value="premium" ${item.isPremium ? 'checked' : ''}>${iconTile('unlock', 'accent', 'sm')}<span><span class="choice-title">Premium</span><br><span class="choice-desc">Subscribers only</span></span></label>
           </div></fieldset>` : ''}
         ${isTest ? html`<div class="stack gap-2"><label class="switch"><input type="checkbox" id="ap-neg" ${item.negativeMarking !== false ? 'checked' : ''}><span class="switch-track"></span><span class="t-body t-strong">Negative marking</span></label>
           <span class="field-help">When on, ${neg} of a mark (one third of ${fmt(marks)}) is deducted for each wrong answer.</span></div>` : ''}

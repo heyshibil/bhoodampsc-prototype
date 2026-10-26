@@ -14,11 +14,11 @@
     opts = opts || {};
     const plan = BP.store.state.plan;
     BP.ui.sheet({
-      title: 'Go Premium',
+      title: 'Premium access',
       body: html`<div class="stack gap-5">
         ${opts.reason ? html`<div class="notice notice--accent">${icon('lock')}<span>${opts.reason}</span></div>` : ''}
         <div class="plan-card">
-          <div class="row-between"><span class="tag tag--outline plan-tag">Monthly plan</span>${iconTile('crown', 'accent', 'sm')}</div>
+          <div class="row-between"><span class="tag tag--outline plan-tag">Monthly plan</span>${iconTile('unlock', 'accent', 'sm')}</div>
           <div class="t-h3">${plan.name}</div>
           <div class="plan-price"><span>₹${plan.pricePerMonth}</span> / month</div>
           <p class="t-caption">Cancel any time. Sample price for the prototype.</p>
@@ -68,9 +68,9 @@
     BP.ui.sheet({
       title: 'Payment successful',
       body: html`<div class="stack gap-4 items-center t-center pt-2">
-        <span class="success-burst">${iconTile('crown', 'accent', 'lg')}</span>
-        <h3 class="t-h2">You are Premium now</h3>
-        <p class="t-body t-muted">Every premium test and paper is unlocked. Happy practising!</p>
+        <span>${iconTile('unlock', 'accent', 'lg')}</span>
+        <h3 class="t-h2">Premium access is active</h3>
+        <p class="t-body t-muted">Premium tests and question papers are now available.</p>
       </div>`,
       foot: html`<button type="button" class="btn btn--primary" data-act="close">${opts.doneLabel || 'Done'}</button>`,
       onClose: () => { if (opts.onDone) opts.onDone(); },

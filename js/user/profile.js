@@ -41,11 +41,11 @@
               <div class="fact"><dt>Member since</dt><dd>${BP.ui.fmtDate(u.joinedAt)}</dd></div>
             </dl>
             ${u.isPremium ? html`<div class="premium-card">
-                <div class="premium-card-head">${iconTile('crown', 'accent', 'sm')}<div><div class="premium-card-title">${plan.name}</div><p>Active since ${BP.ui.fmtDate(u.premiumSince || Date.now())}</p></div></div>
+                <div class="premium-card-head">${iconTile('unlock', 'accent', 'sm')}<div><div class="premium-card-title">${plan.name}</div><p>Active since ${BP.ui.fmtDate(u.premiumSince || Date.now())}</p></div></div>
                 <p>Every premium test and paper is unlocked.</p>
               </div>`
               : html`<div class="premium-card">
-                <div class="premium-card-head">${iconTile('crown', 'accent', 'sm')}<div><div class="premium-card-title">Unlock everything</div><p>₹${plan.pricePerMonth} a month · cancel any time</p></div></div>
+                <div class="premium-card-head">${iconTile('unlock', 'accent', 'sm')}<div><div class="premium-card-title">Premium access</div><p>₹${plan.pricePerMonth} a month · cancel any time</p></div></div>
                 <p>Premium tests, mock exams and question papers.</p>
                 ${BP.u.premiumCta({ block: true, title: 'Upgrade to Premium' })}
               </div>`}

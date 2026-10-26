@@ -84,7 +84,7 @@
     if (P.index >= qs.length) {
       const right = qs.filter((q) => P.chosen[q.id] === q.correctIndex).length;
       return html`<div class="practice-done card stack gap-4 items-center t-center">
-        ${iconTile(right === qs.length ? 'award' : 'check-circle', 'success', 'lg')}
+        ${iconTile('check-circle', 'success', 'lg')}
         <h1 class="t-h1">Practice complete</h1>
         <p class="t-body t-muted">You got <b class="t-strong">${right} of ${qs.length}</b> right.</p>
         <div class="row-wrap gap-3 justify-center">

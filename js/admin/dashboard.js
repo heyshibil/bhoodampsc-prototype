@@ -15,7 +15,7 @@
         ['download', 'Published papers', pub('papers'), '#/admin/library?type=papers&status=published', ''],
         ['bell', 'Published notifications', pub('applications') + pub('exams'), '#/admin/library?type=applications&status=published', ''],
         ['users', 'Users', st.users.length, '#/admin/users', ''],
-        ['crown', 'Premium users', st.users.filter((u) => u.isPremium).length, '#/admin/users?plan=premium', 'accent'],
+        ['unlock', 'Premium users', st.users.filter((u) => u.isPremium).length, '#/admin/users?plan=premium', 'accent'],
       ];
       const cards = st.cards;
       return html`${BP.ad.pageHead('Hello, ' + ctx.admin.name.split(' ')[0], 'Here is what needs your attention today.')}

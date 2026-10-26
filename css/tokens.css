@@ -8,12 +8,12 @@
   --c-primary-100: #E1EAFD;
   --c-primary-200: #BED3FC;
   --c-brand-light: #3A74F7;
-  --c-accent: #6A3DED;
-  --c-accent-50: #F1ECFE;
-  --c-accent-200: #D5C8FB;
-  --g-cta: linear-gradient(90deg, #7A3CF0 0%, #214DE3 100%);
-  --g-hero: linear-gradient(135deg, #BED3FC 0%, #DCE8FD 100%);
-  --g-brand: linear-gradient(140deg, #2A62F0 0%, #0A4FDC 45%, #6A3DED 100%);
+  --c-accent: #625A8A;
+  --c-accent-50: #F2F0F8;
+  --c-accent-200: #D5D0E4;
+  --g-cta: #0A4FDC;
+  --g-hero: #EEF3FE;
+  --g-brand: #0A4FDC;
 
   /* Neutrals */
   --c-bg: #F5F7F7;
@@ -47,14 +47,13 @@
   --c-warning-200: #F5D49B;
   --c-live: #E53935;
 
-  /* Section themes (Home cards): vivid two-stop gradients. Stop 1 (title corner) is deep enough for white text;
-     stop 2 (art corner) is brighter. --th-*-ink is the deep stop, used for small accents such as heading bars. */
-  --th-violet-1: #6A3BEA; --th-violet-2: #A85CF2; --th-violet-ink: #6A3BEA;
-  --th-blue-1: #2C57E6;   --th-blue-2: #4FA6F7;   --th-blue-ink: #2C57E6;
-  --th-teal-1: #0B907F;   --th-teal-2: #34D3B0;   --th-teal-ink: #0B907F;
-  --th-amber-1: #D9620F;  --th-amber-2: #F9A93E;  --th-amber-ink: #C2570C;
-  --th-rose-1: #CF2E66;   --th-rose-2: #F27499;   --th-rose-ink: #CF2E66;
-  --th-soon-1: #6F7887;   --th-soon-2: #A9B0BB;   --th-soon-ink: #6F7887;
+  /* Muted section themes for content grouping and small UI accents. */
+  --th-violet-1: #645A93; --th-violet-2: #8178A8; --th-violet-ink: #645A93;
+  --th-blue-1: #456A91;   --th-blue-2: #6C89A8;   --th-blue-ink: #456A91;
+  --th-teal-1: #3F7472;   --th-teal-2: #67908D;   --th-teal-ink: #3F7472;
+  --th-amber-1: #927044;  --th-amber-2: #B09269;  --th-amber-ink: #927044;
+  --th-rose-1: #955E72;   --th-rose-2: #B48191;   --th-rose-ink: #955E72;
+  --th-soon-1: #6F7887;   --th-soon-2: #9299A3;   --th-soon-ink: #6F7887;
   --c-white-10: rgba(255, 255, 255, .10);
   --c-white-16: rgba(255, 255, 255, .16);
   --c-white-24: rgba(255, 255, 255, .24);
@@ -62,9 +61,9 @@
   --sh-text: 0 1px 2px rgba(11, 12, 14, .18);
   --sh-art: drop-shadow(0 10px 14px rgba(11, 12, 14, .18));
 
-  /* Premium uses the product's premium colour (the violet accent), nothing extra */
-  --c-accent-hover: #5A2FD6;
-  --c-accent-press: #4B26B8;
+  /* The premium accent stays muted and within the shared brand palette. */
+  --c-accent-hover: #554D7A;
+  --c-accent-press: #494263;
   --c-gold: #F5B83D; /* skipped-question bar segment on the test screen */
 
   /* Typography */
@@ -72,10 +71,10 @@
   --f-ml: "Noto Sans Malayalam", "Urbanist", "Nirmala UI", sans-serif;
   --f-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
 
-  --t-display: 700 30px/38px var(--f-sans);
-  --t-h1: 700 24px/32px var(--f-sans);
-  --t-h2: 700 20px/28px var(--f-sans);
-  --t-h3: 600 17px/24px var(--f-sans);
+  --t-display: 700 26px/34px var(--f-sans);
+  --t-h1: 700 22px/30px var(--f-sans);
+  --t-h2: 700 19px/27px var(--f-sans);
+  --t-h3: 600 16px/23px var(--f-sans);
   --t-body: 500 16px/24px var(--f-sans);
   --t-body-sm: 500 14px/20px var(--f-sans);
   --t-caption: 500 13px/18px var(--f-sans);
@@ -96,11 +95,11 @@
   --s-16: 64px;
 
   /* Radii */
-  --r-xs: 6px;
-  --r-sm: 10px;
-  --r-md: 14px;
-  --r-lg: 20px;
-  --r-xl: 28px;
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
   --r-pill: 999px;
 
   /* Shadows */
@@ -108,7 +107,7 @@
   --sh-2: 0 6px 20px rgba(16, 24, 40, .08);
   --sh-3: 0 20px 48px rgba(16, 24, 40, .16);
   --ring: 0 0 0 3px rgba(10, 79, 220, .35);
-  --sh-cta: 0 8px 20px rgba(80, 60, 230, .25);
+  --sh-cta: 0 2px 6px rgba(16, 24, 40, .10);
   --sh-nav: 0 -1px 0 var(--c-border), 0 -8px 24px rgba(16, 24, 40, .04);
 
   /* Layout */
@@ -118,8 +117,6 @@
   --h-topbar: 60px;
   --h-bottomnav: 64px;
   --w-sidebar: 264px;
-  --w-urail: 88px;   /* User app icon rail (tablet) */
-  --w-uside: 0px;    /* User app sidebar width at the current breakpoint */
 
   /* Motion */
   --ease: cubic-bezier(.2, .8, .2, 1);
