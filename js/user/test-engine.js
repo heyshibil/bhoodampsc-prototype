@@ -33,6 +33,9 @@
         title: t.title, cardId: t.cardId, path: BP.content.testPath(t), durationMin: t.durationMin,
         marksPerQuestion: t.marksPerQuestion, negativeMarking: t.negativeMarking, negativeValue: t.negativeValue,
         questions: BP.content.clone(t.questions),
+        // Topic-wise analysis: the card's switch and topic names at start time, so results never change later.
+        usesTopics: !!((BP.store.byId('cards', t.cardId) || {}).settings || {}).usesTopics,
+        topics: Object.fromEntries(t.questions.filter((q) => q.topicId).map((q) => { const tp = BP.store.q.topic(q.topicId); return [q.topicId, tp ? tp.title : 'Untitled topic']; })),
       },
       answers: {}, visited: [t.questions[0].id], current: 0,
       questionTimeMs: {}, activeQuestionStartedAt: now, reviewAnswers: {}, markedQuestions: [],

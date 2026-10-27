@@ -17,7 +17,7 @@
         if (parsed && parsed.version === BP.seed.version) { state = parsed; return; }
         // Update only the requested seeded mock on existing v5 demos; keep saved attempts,
         // creator drafts and admin structure/content intact.
-        if (parsed && parsed.version === 5 && BP.seed.version === 6) {
+        if (parsed && parsed.version === 5 && BP.seed.version >= 6) {
           const seededMock = fresh().tests.find((test) => test.id === 't_pyq12_real_mock');
           if (seededMock && Array.isArray(parsed.tests)) {
             let replaced = false;
@@ -27,17 +27,40 @@
               return seededMock;
             });
             if (!replaced) parsed.tests.push(seededMock);
-            parsed.version = BP.seed.version;
-            state = parsed;
-            save();
-            return;
+            parsed.version = 6;
           }
+        }
+        // v6 → v7: add the shared topic bank and tag sample questions with topics, in place.
+        if (parsed && parsed.version === 6 && BP.seed.version === 7) {
+          migrateTopics(parsed, fresh());
+          parsed.version = 7;
+          state = parsed;
+          save();
+          return;
         }
       }
     } catch (e) { /* corrupt or blocked storage: fall through to a fresh seed */ }
     state = fresh();
     save();
   }
+  /** Non-destructive: copies the topic bank, the card switch and question topic tags from a fresh seed. */
+  function migrateTopics(s, f) {
+    s.topicGroups = s.topicGroups || f.topicGroups;
+    s.topics = s.topics || f.topics;
+    const tag = {};
+    f.tests.forEach((t) => t.questions.forEach((q) => { tag[q.id] = q.topicId; }));
+    const apply = (q) => { if (q && q.topicId === undefined) q.topicId = tag[q.id] || null; };
+    (s.tests || []).forEach((t) => (t.questions || []).forEach(apply));
+    (s.attempts || []).forEach((a) => a.snapshot && (a.snapshot.questions || []).forEach(apply));
+    (s.cards || []).forEach((c) => {
+      const fc = f.cards.find((x) => x.id === c.id);
+      if (fc && fc.settings && fc.settings.usesTopics && c.settings && c.settings.usesTopics === undefined) c.settings.usesTopics = true;
+    });
+    (s.attempts || []).forEach((a) => {
+      if (a.snapshot && a.snapshot.usesTopics === undefined) a.snapshot.usesTopics = !!((s.cards.find((c) => c.id === a.snapshot.cardId) || {}).settings || {}).usesTopics;
+    });
+  }
+
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); }
     catch (e) { console.warn('BoodhamPSC: could not save demo data', e); }
@@ -83,10 +106,11 @@
         { key: 'usesStage', label: 'Uses Prelims / Mains' },
         { key: 'usesYear', label: 'Uses Year' },
         { key: 'usesSubject', label: 'Uses Subject' },
+        { key: 'usesTopics', label: 'Topic-wise analysis' },
       ],
       creates: 'test',
     },
-    topic_test: { label: 'Topic Test', description: 'Subject, then subsection if any, then a test list.', settings: [], creates: 'test' },
+    topic_test: { label: 'Topic Test', description: 'Subject, then subsection if any, then a test list.', settings: [{ key: 'usesTopics', label: 'Topic-wise analysis' }], creates: 'test' },
     notification: { label: 'Notification', description: 'Application and Exam tabs, list, detail page.', settings: [], creates: 'notice' },
     paper_download: { label: 'Paper Download', description: 'Category, then year, then papers to download.', settings: [], creates: 'paper' },
     current_affairs: { label: 'Current Affairs', description: 'Daily, Weekly and Monthly practice, sorted by date.', settings: [{ key: 'usesSubject', label: 'Show monthly subject filters' }], creates: 'ca' },
@@ -190,6 +214,11 @@
         .map((item) => ({ type: t, item })));
     },
     unreadCount(userId) { return state.inbox.filter((n) => n.userId === userId && !n.read).length; },
+    /** Shared topic bank, grouped by subject, in Admin order. */
+    topicGroups() {
+      return (state.topicGroups || []).slice().sort(byOrder).map((g) => ({ group: g, topics: (state.topics || []).filter((t) => t.groupId === g.id).sort(byOrder) }));
+    },
+    topic(id) { return (state.topics || []).find((t) => t.id === id) || null; },
   };
 
   BP.store = { load, save, update, reset, on, emit, get, byId, uid, byOrder, canTransition, session, q, KEY,

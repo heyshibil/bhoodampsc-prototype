@@ -50,6 +50,7 @@
                 <div class="instruction-note">${icon(t.negativeMarking ? 'minus' : 'check-circle')}<span>${t.negativeMarking ? 'Each wrong answer deducts ' + neg + ' mark. Unanswered questions do not lose marks.' : 'There is no negative marking in this test.'}</span></div>
                 <div class="instruction-note">${icon('languages')}<span>Use the EN / <span lang="ml">മല</span> control during the test to switch question language.</span></div>
                 <div class="instruction-note">${icon('clock')}<span>The timer cannot be paused after you start.</span></div>
+                <div class="instruction-note">${icon('maximize')}<span>The test opens in full screen and stays there until you submit.</span></div>
               </div>
             </section>
           </div>
@@ -112,6 +113,35 @@
         return { title: g.title, score: sc.score, max: sc.max, att, n: g.questions.length, acc: att ? Math.round(sc.correct / att * 1000) / 10 : 0, time: g.questions.reduce((t, q) => t + qTime(q), 0) };
       });
       const single = rows.length === 1;
+      /* Topic-wise summary: only when the card had topic-wise analysis on at the time of the attempt. */
+      const usesTopics = s.usesTopics != null ? s.usesTopics : !!(((BP.store.byId('cards', s.cardId) || {}).settings || {}).usesTopics);
+      const topicRows = [];
+      if (usesTopics && s.questions.some((q) => q.topicId)) {
+        s.questions.forEach((q, i) => {
+          const id = q.topicId || '_other';
+          let row = topicRows.find((t) => t.id === id);
+          if (!row) {
+            const live = q.topicId && BP.store.q.topic(q.topicId);
+            row = { id, title: q.topicId ? ((s.topics && s.topics[q.topicId]) || (live && live.title) || 'Untitled topic') : 'Other', items: [] };
+            topicRows.push(row);
+          }
+          const ans = a.answers[q.id];
+          row.items.push({ n: i + 1, st: ans == null ? 'unattempted' : ans === q.correctIndex ? 'correct' : 'incorrect' });
+        });
+        if (topicRows.length > 1 && topicRows[0].id === '_other') topicRows.push(topicRows.shift());
+      }
+      const topicRow = (t, k) => {
+        const correct = t.items.filter((x) => x.st === 'correct').length;
+        const pctC = Math.round(correct / t.items.length * 100);
+        return html`<li class="tw-row">
+          <div class="tw-main">
+            <span class="tw-title">${k + 1}. ${t.title}</span>
+            <span class="tw-meter"><span class="tw-meter-label">Correct %</span><span class="tw-bar" aria-hidden="true"><span style="width:${pctC}%"></span></span><b class="t-num">${pctC}%</b></span>
+          </div>
+          <div class="tw-qs" role="list" aria-label="${t.title}: questions">${t.items.map((x) => html`<a role="listitem" class="tw-q tw-q--${x.st}" href="#/user/attempt/${a.id}/review?q=${x.n}" aria-label="Question ${x.n}, ${x.st}">${x.n}</a>`)}</div>
+        </li>`;
+      };
+      const TOPIC_PREVIEW = 8;
       const statTile = (ic, variant, value, sub, label) => html`<div class="rs-stat">${iconTile(ic, variant)}<div class="rs-stat-text"><span class="rs-stat-value t-num">${value}${sub ? html`<small> / ${sub}</small>` : ''}</span><span class="rs-stat-label">${label}</span></div></div>`;
       return html`
         ${BP.u.pageHead({ back: backToList(s.cardId), backLabel: 'Back to tests', crumbs: s.path, title: s.title, sub: (a.status === 'auto_submitted' ? 'Auto-submitted' : 'Submitted') + ' · ' + BP.ui.fmtRelative(a.submittedAt || a.startedAt) })}
@@ -151,6 +181,21 @@
               </tr>`)}</tbody>
             </table></div>
           </section>
+
+          ${topicRows.length ? html`<section class="stack gap-3" aria-labelledby="rs-topics">
+            <div class="row-between tw-head">
+              <h2 class="t-h2" id="rs-topics">Topic-wise summary</h2>
+              <div class="tw-legend" aria-label="Legend"><span><i class="tw-dot tw-dot--correct"></i>Correct</span><span><i class="tw-dot tw-dot--incorrect"></i>Incorrect</span><span><i class="tw-dot tw-dot--unattempted"></i>Unattempted</span></div>
+            </div>
+            <div class="card card--flush tw-card">
+              <ol class="tw-list" role="list">${topicRows.slice(0, TOPIC_PREVIEW).map(topicRow)}</ol>
+              ${topicRows.length > TOPIC_PREVIEW ? html`<details class="tw-more">
+                <summary><span class="tw-more-closed">Show all ${topicRows.length} topics</span><span class="tw-more-open">Show fewer topics</span>${icon('chevron-down')}</summary>
+                <ol class="tw-list" role="list" start="${TOPIC_PREVIEW + 1}">${topicRows.slice(TOPIC_PREVIEW).map((t, k) => topicRow(t, k + TOPIC_PREVIEW))}</ol>
+              </details>` : ''}
+            </div>
+            <p class="t-caption">Tap a question number to open it in the solutions.</p>
+          </section>` : ''}
 
           <div class="result-actions">
             <a class="btn btn--primary btn--lg" href="#/user/attempt/${a.id}/review">${icon('eye')}View solutions</a>

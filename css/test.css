@@ -85,13 +85,12 @@
 .rv-time b, .rv-marks b { color: var(--c-text); font-weight: 700; }
 .rv-avg { color: var(--c-text-3); }
 .rv-time--superfast svg, .rv-time--on-time svg { color: var(--c-success); }
-.rv-time--slow svg, .rv-time--on-time-incorrect svg { color: var(--c-error); }
+.rv-time--slow svg { color: var(--c-error); }
 .rv-marks { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .rv-marks-val { display: inline-grid; place-items: center; min-width: 26px; height: 22px; padding: 0 7px; border-radius: var(--r-pill); font: 700 12px/1 var(--f-sans) !important; }
 .rv-marks-val--correct { background: var(--c-success); color: var(--c-white) !important; }
 .rv-marks-val--incorrect { background: var(--c-error); color: var(--c-white) !important; }
 .rv-marks-val--unattempted { background: var(--c-surface-muted); }
-.rv-pct { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: var(--r-xs); background: var(--c-success-50); color: var(--c-success-700); font: 600 12px/1 var(--f-sans); white-space: nowrap; }
 
 /* ---------- Question card ---------- */
 .ts-card { display: flex; flex-direction: column; gap: var(--s-5); padding: var(--s-5); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
@@ -132,6 +131,26 @@ button.opt:hover:not([disabled]):not([aria-disabled="true"]) { border-color: var
 .opt.is-wrong .opt-tag--you { color: var(--c-error); box-shadow: inset 0 0 0 1px var(--c-error-200); }
 .opt.is-dim { border-color: var(--c-border); }
 .opt.is-dim .opt-text { color: var(--c-text-2); }
+
+/* Review answer states (solutions screen)
+   correct ............ solid green, ✓
+   re-attempt, wrong .. solid red, ↻
+   first attempt, wrong (re-attempt mode on, differs from both): plain row, red ✕, "Your first attempt" tag
+   first attempt, wrong (re-attempt mode off): solid red, ✕
+   The "Your first attempt" tag sits on whichever row holds the first attempt. */
+.ts--review .opt.is-correct, .ts--review .opt.is-wrong { color: var(--c-white); box-shadow: none; }
+.ts--review .opt.is-correct { background: var(--c-success); border-color: var(--c-success); }
+.ts--review .opt.is-wrong { background: var(--c-error); border-color: var(--c-error); }
+.ts--review .opt.is-correct .opt-key, .ts--review .opt.is-wrong .opt-key { background: rgba(255, 255, 255, .18); border-color: transparent; color: var(--c-white); }
+.ts--review .opt.is-correct .opt-text, .ts--review .opt.is-wrong .opt-text { font-weight: 600; }
+.ts--review .opt.is-first { border-color: var(--c-error-200); }
+.ts--review .opt.is-first .opt-key { background: var(--c-error-50); border-color: var(--c-error-200); color: var(--c-error); }
+.ts--review .opt-tag--first { background: var(--c-surface); box-shadow: none; }
+.ts--review .opt.is-correct .opt-tag--first { color: var(--c-success-700); }
+.ts--review .opt.is-wrong .opt-tag--first { color: var(--c-error); }
+.ts--review .opt.is-first .opt-tag--first { background: var(--c-error-50); color: var(--c-error); }
+.ts--review .opt.is-plain { border-color: var(--c-border); }
+.reattempt-off-note { font: italic 500 13px/18px var(--f-sans); color: var(--c-text-3); }
 
 /* Review: re-attempt prompt and solution */
 .reattempt-box { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-4); border-radius: var(--r-md); background: var(--c-warning-50); border: 1px solid var(--c-warning-200); color: var(--c-text); font: var(--t-body-sm); }
@@ -228,13 +247,12 @@ body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-a
 .tp-legend-item > span:last-child { min-width: 0; }
 
 .tp-speed { display: grid; gap: var(--s-3); padding-bottom: var(--s-4); border-bottom: 1px solid var(--c-border); }
-.tp-speed-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-1); }
+.tp-speed-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); }
 .tp-speed-item { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; text-align: center; font: 500 11px/14px var(--f-sans); color: var(--c-text-2); }
 .tp-speed-item svg { width: 24px; height: 24px; }
 .tp-speed-item b { font: 700 14px/1 var(--f-sans); color: var(--c-text); }
 .tp-speed-item--superfast svg, .tp-speed-item--on-time svg { color: var(--c-success); }
 .tp-speed-item--slow svg { color: var(--c-error); }
-.tp-speed-item--on-time-incorrect svg { color: var(--c-text-2); }
 
 .tp-group-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); margin: 0 calc(-1 * var(--s-4)); padding: var(--s-2) var(--s-4); background: var(--c-surface-muted); font: var(--t-caption); color: var(--c-text-2); }
 .tp-group-head b { color: var(--c-text); font-weight: 700; }
@@ -269,12 +287,17 @@ body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-a
 @media (min-width: 1024px) {
   .ts-progress-trigger { display: none; }
   .ts--panel .ts-top { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
-  .ts-layout { max-width: 1440px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; gap: var(--s-6); padding: var(--s-5) var(--s-6) calc(96px + env(safe-area-inset-bottom)); }
-  .ts-panel { position: sticky; top: calc(72px + var(--s-5)); }
-  .tp { padding: var(--s-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); max-height: calc(100vh - 72px - 96px - var(--s-5)); max-height: calc(100dvh - 72px - 96px - var(--s-5)); overflow-y: auto; }
+  /* Question column on the left; the summary side sits on a slightly darker shade so the two
+     areas separate clearly but quietly. */
+  .ts--panel { --ts-side: 360px; --ts-foot-h: 69px; }
+  .ts-layout { display: block; max-width: none; margin: 0; padding: var(--s-5) calc(var(--ts-side) + var(--s-6)) calc(var(--ts-foot-h) + var(--s-6)) var(--s-6); }
+  .ts-layout .ts-main { max-width: 960px; margin: 0 auto; }
+  .ts-panel { position: fixed; z-index: 1; top: 75px; right: 0; bottom: var(--ts-foot-h); width: var(--ts-side); padding: var(--s-5); overflow-y: auto; overscroll-behavior: contain; background: var(--c-panel-shade); border-left: 1px solid var(--c-border-strong); }
+  .tp { padding: var(--s-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); box-shadow: var(--sh-1); }
   .tp-foot { border-radius: 0 0 var(--r-lg) var(--r-lg); }
   .ts-submit-inline { display: none; }
-  .ts--panel .ts-foot { padding-left: max(var(--s-6), calc((100vw - 1440px) / 2 + var(--s-6))); padding-right: max(calc(320px + var(--s-6) * 2), calc((100vw - 1440px) / 2 + 320px + var(--s-6) * 2)); }
+  .ts--panel .ts-foot { padding-left: var(--s-6); padding-right: calc(var(--ts-side) + var(--s-6)); }
+  .ts--panel .ts-foot::after { content: ""; position: absolute; top: -1px; right: 0; bottom: 0; width: var(--ts-side); background: var(--c-panel-shade); border-left: 1px solid var(--c-border-strong); border-top: 1px solid var(--c-border); pointer-events: none; }
 }
 
 /* Submit confirm: per-section summary */
@@ -295,6 +318,11 @@ body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-a
 .sum-cell--answered { color: var(--c-success-700) !important; font-weight: 700; }
 .sum-cell--notanswered { color: var(--c-error) !important; font-weight: 700; }
 .sum-cell--marked { color: var(--c-accent) !important; font-weight: 700; }
+
+/* Full-screen prompt (shares the overlay card) */
+.ts-overlay--fs { background: rgba(11, 12, 14, .72); }
+.ts-fs-ic { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: var(--c-primary-50); color: var(--c-primary); }
+.ts-fs-ic svg { width: 28px; height: 28px; }
 
 /* Reconnecting overlay */
 .ts-overlay { position: fixed; inset: 0; z-index: var(--z-sheet); display: grid; place-items: center; padding: var(--s-4); background: var(--c-scrim); animation: fade-in var(--dur) var(--ease); }

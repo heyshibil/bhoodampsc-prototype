@@ -45,7 +45,7 @@
       card('card_pyq_download', 'sec_special', 3, 'PYQ Papers Download', 'download', 'paper_download'),
 
       card('card_pyq_10th', 'sec_pyq', 1, '10th', 'book', 'paper_test', stageYear),
-      card('card_pyq_12th', 'sec_pyq', 2, '12th', 'book-open', 'paper_test', stageYear),
+      card('card_pyq_12th', 'sec_pyq', 2, '12th', 'book-open', 'paper_test', Object.assign({ usesTopics: true }, stageYear)),
       card('card_pyq_degree', 'sec_pyq', 3, 'Degree', 'graduation-cap', 'paper_test', stageYear),
       card('card_topic', 'sec_pyq', 4, 'Topic', 'layers', 'topic_test'),
       card('card_special_topic', 'sec_pyq', 5, 'Special Topic', 'target', 'paper_test', stageYear),
@@ -114,6 +114,8 @@
       createdAt: now.getTime(),
 
       sections, cards, subjects, subsections, years, downloadCategories,
+      topicGroups: BP.TOPIC_BANK.groups.map((g) => Object.assign({}, g)),
+      topics: BP.TOPIC_BANK.topics.map((t) => Object.assign({}, t)),
 
       /* Content */
       tests: content.tests,
@@ -154,5 +156,5 @@
     };
   }
 
-  BP.seed = { version: 6, build, DISTRICTS, QUALIFICATIONS, isoDaysAgo };
+  BP.seed = { version: 7, build, DISTRICTS, QUALIFICATIONS, isoDaysAgo };
 })();

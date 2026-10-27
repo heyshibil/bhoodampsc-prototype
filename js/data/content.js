@@ -12,7 +12,7 @@
   ].join('\n');
 
   const POOL_SUBJECT = { geo: 'Kerala geography', ref: 'Kerala renaissance', fre: 'Freedom movement', con: 'Indian Constitution', sci: 'General science', mat: 'Maths', eng: 'English', gk: 'General knowledge', ca: 'Current affairs', reason: 'Reasoning', mal: 'Malayalam' };
-  const cloneQ = (q, id, subject) => ({ id, subject: subject || null, en: { text: q.en.text, options: q.en.options.slice(), explanation: q.en.explanation || '' }, ml: { text: q.ml.text, options: q.ml.options.slice(), explanation: q.ml.explanation || '' }, correctIndex: q.correctIndex });
+  const cloneQ = (q, id, subject, topicId) => ({ id, subject: subject || null, topicId: topicId || null, en: { text: q.en.text, options: q.en.options.slice(), explanation: q.en.explanation || '' }, ml: { text: q.ml.text, options: q.ml.options.slice(), explanation: q.ml.explanation || '' }, correctIndex: q.correctIndex });
 
   /** Pick n distinct questions, cycling through the given pools. `seed` varies the selection per test. */
   function pick(pools, seed, n) {
@@ -43,7 +43,8 @@
     /* ---------- Tests ---------- */
     const T = (id, cardId, o) => {
       const neg = o.neg !== false;
-      const questions = pick(o.pools, o.seed, o.n).map((entry, i) => cloneQ(entry.question, id + '_q' + (i + 1), o.withSubjects ? POOL_SUBJECT[entry.pool] : null));
+      const questions = pick(o.pools, o.seed, o.n).map((entry, i) => cloneQ(entry.question, id + '_q' + (i + 1), o.withSubjects ? POOL_SUBJECT[entry.pool] : null,
+        BP.TOPIC_BANK.topicFor(entry.pool, BP.QBANK[entry.pool].indexOf(entry.question))));
       if (o.withSubjects) {
         const order = o.pools.map((pool) => POOL_SUBJECT[pool]);
         questions.sort((a, b) => order.indexOf(a.subject) - order.indexOf(b.subject));
@@ -203,7 +204,8 @@
     }
     function pastAttempt(id, test, daysAgo, pattern, opts) {
       const snapshot = { title: test.title, cardId: test.cardId, path: pathFor(test), durationMin: test.durationMin, marksPerQuestion: test.marksPerQuestion,
-        negativeMarking: test.negativeMarking, negativeValue: test.negativeValue, questions: test.questions.map((q) => JSON.parse(JSON.stringify(q))) };
+        negativeMarking: test.negativeMarking, negativeValue: test.negativeValue, questions: test.questions.map((q) => JSON.parse(JSON.stringify(q))),
+        usesTopics: !!(cards.find((c) => c.id === test.cardId).settings || {}).usesTopics };
       const answers = {};
       snapshot.questions.forEach((q, i) => {
         const p = pattern[i];

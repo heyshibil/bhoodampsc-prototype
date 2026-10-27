@@ -27,12 +27,16 @@
     opts = opts || {};
     const theme = 'theme-' + BP.themeOf(section);
     const soon = card.status === 'coming_soon';
-    const inner = html`<span class="tile-art" aria-hidden="true">${icon(card.icon)}</span>
-      <span class="tile-title">${card.title || 'Card title'}</span>
-      <span class="tile-meta">${opts.meta || cardMeta(card)}</span>`;
-    if (opts.preview) return html`<div class="tile ${theme} ${soon ? 'tile--soon' : ''} tile--preview">${inner}</div>`;
-    if (soon) return html`<button type="button" class="tile ${theme} tile--soon" data-act="soon" data-id="${card.id}">${inner}</button>`;
-    return html`<a class="tile ${theme}" href="#/user/card/${card.id}">${inner}</a>`;
+    const variant = 'tile--v' + (((opts.variant || 1) - 1) % 4 + 1); // shade of the section colour
+    const inner = html`<span class="tile-icon" aria-hidden="true">${icon(card.icon)}</span>
+      <span class="tile-art" aria-hidden="true">${icon(card.icon)}</span>
+      <span class="tile-text">
+        <span class="tile-title">${card.title || 'Card title'}</span>
+        <span class="tile-meta">${soon ? icon('clock') : ''}${opts.meta || cardMeta(card)}</span>
+      </span>`;
+    if (opts.preview) return html`<div class="tile ${theme} ${variant} ${soon ? 'tile--soon' : ''} tile--preview">${inner}</div>`;
+    if (soon) return html`<button type="button" class="tile ${theme} ${variant} tile--soon" data-act="soon" data-id="${card.id}">${inner}</button>`;
+    return html`<a class="tile ${theme} ${variant}" href="#/user/card/${card.id}">${inner}</a>`;
   }
   BP.homeTile = tile;
 
@@ -64,7 +68,7 @@
         <div class="stack gap-8 home-sections">
           ${layout.length ? layout.map((g) => html`<section id="section-${g.section.id}" class="home-sec theme-${BP.themeOf(g.section)}" aria-labelledby="sec-${g.section.id}">
             <div class="section-head"><h2 id="sec-${g.section.id}">${g.section.title}</h2></div>
-            <div class="tile-grid">${g.cards.map((c) => tile(c, g.section))}</div>
+            <div class="tile-grid">${g.cards.map((c, i) => tile(c, g.section, { variant: i + 1 }))}</div>
           </section>`) : BP.ui.emptyState({ title: 'Nothing here yet', text: 'Sections appear here once the admin publishes them.' })}
         </div>`;
     },

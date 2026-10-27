@@ -97,6 +97,7 @@
     zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/>',
     ghost: '<path d="M5 21V11a7 7 0 0 1 14 0v10l-2.3-1.6-2.4 1.6-2.3-1.6-2.3 1.6-2.4-1.6L5 21Z"/><path d="M9.5 11h.01M14.5 11h.01"/>',
     terminal: '<path d="m4 17 6-5-6-5M12 19h8"/>',
+    maximize: '<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>',
     eraser: '<path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5.6 5.6a1 1 0 0 1 0 1.4L13 21"/><path d="M22 21H7M5.5 11.5l7 7"/>',
     /* Stopwatch faces for review speed indicators */
     'speed-fast': '<circle cx="12" cy="13.5" r="7.5"/><path d="M10 2.5h4M12 2.5V6M18.5 6.5 17 8M9.5 12h.01M14.5 12h.01M9 15q3 3 6 0"/>',

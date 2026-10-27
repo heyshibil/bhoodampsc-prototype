@@ -39,8 +39,6 @@
   }
   /** Average time all aspirants spent on this question (seconds). Demo value until real aggregates exist. */
   const avgTime = (q) => (q.avgTimeSec != null ? q.avgTimeSec : seeded(q, 18, 75));
-  /** Share of aspirants who answered this question correctly (%). Demo value until real aggregates exist. */
-  const correctPct = (q) => (q.correctPct != null ? q.correctPct : seeded(q, 12, 86));
   /** Speed against the average. Unanswered questions have no speed. */
   function reviewSpeed(a, q) {
     if (reviewCategory(a, q) === 'unattempted') return null;
@@ -48,16 +46,15 @@
     const spent = questionTime(a, q);
     if (spent <= avg * 0.5) return 'superfast';
     if (spent > avg * 1.25) return 'slow';
-    return reviewCategory(a, q) === 'incorrect' ? 'on-time-incorrect' : 'on-time';
+    return 'on-time';
   }
   const SPEEDS = [
     ['superfast', 'Superfast', 'speed-fast'],
     ['on-time', 'On time', 'speed-ontime'],
     ['slow', 'Slow', 'speed-slow'],
-    ['on-time-incorrect', 'On time but not correct', 'speed-wrong'],
   ];
   function speedCounts(a) {
-    const out = { superfast: 0, 'on-time': 0, slow: 0, 'on-time-incorrect': 0 };
+    const out = { superfast: 0, 'on-time': 0, slow: 0 };
     a.snapshot.questions.forEach((q) => { const s = reviewSpeed(a, q); if (s) out[s]++; });
     return out;
   }
@@ -166,29 +163,32 @@
     const reAns = a.reviewAnswers ? a.reviewAnswers[q.id] : undefined;
     const reattempting = T.reattempt && reAns == null && !T.revealed[q.id];
     const st = reviewCategory(a, q);
-    const pct = correctPct(q);
     const speed = reviewSpeed(a, q);
     const speedMeta = SPEEDS.find((s) => s[0] === speed);
     const scoreLabel = st === 'correct' ? '+' + BP.scoring.fmt(a.snapshot.marksPerQuestion) : st === 'incorrect' && a.snapshot.negativeMarking ? '−' + BP.scoring.fmt(a.snapshot.negativeValue) : '0';
-    const tagsFor = (k) => {
-      const t = [];
-      if (!reattempting && k === q.correctIndex) t.push(html`<span class="opt-tag opt-tag--stat">${pct}% answered correctly</span>`);
-      if (k === chosen) t.push(html`<span class="opt-tag opt-tag--you">${reAns != null ? 'Your first attempt' : 'Your answer'}</span>`);
-      if (!reattempting && reAns != null && k === reAns) t.push(html`<span class="opt-tag opt-tag--you">Your re-attempt</span>`);
-      return t;
-    };
+    /* Answer states (see css/test.css "Review answer states"):
+       right answer → green ✓ · re-attempt (if wrong) → solid red ↻ · first attempt (if wrong):
+       with re-attempt mode on, a plain row with a red ✕ and a "Your first attempt" tag; with it off, solid red ✕.
+       Nothing is marked while the question is being re-attempted. */
+    const modeOn = !!T.reattempt;
     const opts = q[l].options.map((o, k) => {
-      const tags = tagsFor(k);
       if (reattempting) {
         return html`<button type="button" class="opt" role="radio" aria-checked="false" data-act="reattempt-choose" data-i="${k}">
-          <span class="opt-key">${BP.content.LETTERS[k]}</span><span class="opt-text"${L()}>${o}</span>${tags.length ? html`<span class="opt-tags">${tags}</span>` : ''}</button>`;
+          <span class="opt-key">${BP.content.LETTERS[k]}</span><span class="opt-text"${L()}>${o}</span></button>`;
       }
       const isRight = k === q.correctIndex;
-      const isWrong = !isRight && (k === chosen || (reAns != null && k === reAns));
-      const cls = isRight ? 'is-correct' : isWrong ? 'is-wrong' : 'is-dim';
-      const key = isRight ? icon('check') : isWrong ? icon('x') : BP.content.LETTERS[k];
-      return html`<div class="opt ${cls}" role="listitem"><span class="opt-key">${key}</span><span class="opt-text"${L()}>${o}</span>${tags.length ? html`<span class="opt-tags">${tags}</span>` : ''}
-        <span class="visually-hidden">${isRight ? ', correct answer' : isWrong ? ', wrong answer' : ''}</span></div>`;
+      const isFirst = k === chosen;
+      const isRe = modeOn && reAns != null && k === reAns;
+      let cls = 'is-plain', key = BP.content.LETTERS[k];
+      const sr = [];
+      if (isRight) { cls = 'is-correct'; key = icon('check'); sr.push('correct answer'); }
+      else if (isRe) { cls = 'is-wrong'; key = icon('refresh'); sr.push('your re-attempt, wrong'); }
+      else if (isFirst) { cls = modeOn ? 'is-first' : 'is-wrong'; key = icon('x'); }
+      if (isRe && isRight) sr.push('your re-attempt');
+      if (isFirst) sr.push(isRight ? 'your first attempt' : 'your first attempt, wrong');
+      const tag = isFirst && modeOn ? html`<span class="opt-tags"><span class="opt-tag opt-tag--first">Your first attempt</span></span>` : '';
+      return html`<div class="opt ${cls}" role="listitem"><span class="opt-key">${key}</span><span class="opt-text"${L()}>${o}</span>${tag}
+        ${sr.length ? html`<span class="visually-hidden">, ${sr.join(', ')}</span>` : ''}</div>`;
     });
     const statusLabel = { correct: 'Correct', incorrect: 'Incorrect', unattempted: 'Unattempted' }[st];
     return html`<div class="ts-qhead ts-qhead--review">
@@ -198,7 +198,6 @@
         <span class="rv-time ${speed ? 'rv-time--' + speed : ''}" ${speedMeta ? raw('title="' + speedMeta[1] + '"') : ''}>${icon(speedMeta ? speedMeta[2] : 'clock')}<span>You: <b class="t-num">${mmss(questionTime(a, q))}</b></span><span class="rv-avg">Avg: <b class="t-num">${mmss(avgTime(q))}</b></span></span>
         <span class="rv-sep" aria-hidden="true"></span>
         <span class="rv-marks">Marks <b class="rv-marks-val rv-marks-val--${st}">${scoreLabel}</b></span>
-        <span class="rv-pct">${pct}% answered correctly</span>
       </div>
       <div class="ts-card">
         <p class="ts-qtext"${L()} id="ts-q">${q[l].text}</p>
@@ -208,7 +207,7 @@
             <span class="grow"><b>Re-attempt mode is on</b><span class="t-caption block">Choose an answer to try this question again.</span></span>
             <button type="button" class="btn btn--secondary btn--sm" data-act="view-solution">${icon('eye')}View solution</button>
           </div>`
-          : html`<section class="solution" aria-label="Solution">
+          : html`${modeOn ? '' : html`<p class="reattempt-off-note">Re-attempt mode is off. Turn it on from the bottom bar.</p>`}<section class="solution" aria-label="Solution">
             <h3 class="solution-title">Solution</h3>
             ${chosen == null ? html`<p class="solution-note">${icon('info')}You did not answer this question.</p>` : ''}
             <p class="solution-answer">The correct answer is <b${L()}>${BP.content.LETTERS[q.correctIndex]}. ${q[l].options[q.correctIndex]}</b></p>
@@ -380,6 +379,51 @@
     tick();
   }
 
+  /* ---------- Full screen (tests only, until submit) ----------
+     Browsers allow full screen only right after a tap, so it starts from Start / Resume.
+     Leaving it covers the test with a prompt to return; the timer keeps running. Where the
+     browser has no full-screen support (iPhone Safari), the test simply runs as a normal page. */
+  const FS = {
+    supported: () => !!(document.fullscreenEnabled || document.webkitFullscreenEnabled),
+    active: () => !!(document.fullscreenElement || document.webkitFullscreenElement),
+    enter() {
+      const el = document.documentElement;
+      const fn = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (!fn) return Promise.reject(new Error('unsupported'));
+      try { const r = fn.call(el, { navigationUI: 'hide' }); return r && r.then ? r : Promise.resolve(); } catch (e) { return Promise.reject(e); }
+    },
+    exit() {
+      if (!FS.active()) return;
+      const fn = document.exitFullscreen || document.webkitExitFullscreen;
+      try { const r = fn && fn.call(document); if (r && r.catch) r.catch(() => {}); } catch (e) { /* already left */ }
+    },
+  };
+  function showFsPrompt(first) {
+    const ts = document.querySelector('.ts');
+    if (!ts || document.getElementById('ts-fs')) return;
+    const o = document.createElement('div');
+    o.id = 'ts-fs';
+    o.className = 'ts-overlay ts-overlay--fs';
+    o.setAttribute('role', 'alertdialog');
+    o.setAttribute('aria-modal', 'true');
+    o.setAttribute('aria-labelledby', 'ts-fs-title');
+    o.innerHTML = String(html`<div class="ts-overlay-card">
+      <span class="ts-fs-ic" aria-hidden="true">${icon('maximize')}</span>
+      <h2 class="t-h2" id="ts-fs-title">${first ? 'Continue in full screen' : 'You left full screen'}</h2>
+      <p class="t-body t-muted">This test runs in full screen, like the real exam. Your answers are saved and the timer keeps running.</p>
+      <button type="button" class="btn btn--primary btn--lg btn--block" data-act="fs-enter">${icon('maximize')}Return to full screen</button>
+    </div>`);
+    ts.appendChild(o);
+    o.querySelector('button').focus();
+  }
+  function hideFsPrompt() { const o = document.getElementById('ts-fs'); if (o) o.remove(); }
+  function onFsChange() {
+    if (!T || T.review) return;
+    const a = attempt();
+    if (!a || a.status !== 'in_progress') return;
+    if (FS.active()) hideFsPrompt(); else showFsPrompt(false);
+  }
+
   /* ---------- Routes ---------- */
   function mountScreen(root, ctx, review) {
     const a = E().get(ctx.params.attemptId);
@@ -390,11 +434,16 @@
       T.timers.push(setInterval(tick, 1000));
       T.timers.push(setInterval(() => E().beat(a.id), BP.store.state.settings.heartbeatSeconds * 1000));
       if (E().isOffline(a.id)) showOverlay();
+      if (FS.supported()) {
+        document.addEventListener('fullscreenchange', onFsChange);
+        document.addEventListener('webkitfullscreenchange', onFsChange);
+        if (!FS.active()) FS.enter().catch(() => showFsPrompt(true));
+      }
     }
     draw();
     T.onKey = (e) => {
       if (e.key === 'Escape' && T.progressOpen) { setProgressOpen(false); e.preventDefault(); return; }
-      if (document.querySelector('#overlay-root .overlay') || document.getElementById('ts-overlay')) return;
+      if (document.querySelector('#overlay-root .overlay') || document.getElementById('ts-overlay') || document.getElementById('ts-fs')) return;
       if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
       const k = e.key.toLowerCase();
       const map = { 1: 0, 2: 1, 3: 2, 4: 3, a: 0, b: 1, c: 2, d: 3 };
@@ -411,6 +460,9 @@
     (T.timers || []).forEach(clearInterval);
     document.removeEventListener('keydown', T.onKey);
     window.removeEventListener('resize', T.onResize);
+    document.removeEventListener('fullscreenchange', onFsChange);
+    document.removeEventListener('webkitfullscreenchange', onFsChange);
+    if (!T.review) FS.exit(); // leaving the test (submitted, auto-submitted or navigated away)
     document.body.classList.remove('in-test');
     document.body.classList.remove('ts-progress-open');
   }
@@ -514,6 +566,7 @@
     'toggle-progress'() { setProgressOpen(!T.progressOpen); },
     'close-progress'() { setProgressOpen(false); },
     submit: confirmSubmit,
+    'fs-enter'() { FS.enter().then(hideFsPrompt).catch(() => BP.ui.toast('Full screen is not available in this browser.')); },
     lang(el) { BP.store.session.setLang(el.dataset.value); document.getElementById('ts-lang').innerHTML = String(langToggle()); draw(); },
     reconnect() {
       E().reconnect();

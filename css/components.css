@@ -36,6 +36,12 @@
 .btn--hero:hover { background: var(--c-primary-hover); }
 .btn--secondary { background: var(--c-surface); color: var(--c-text); border-color: var(--c-border-strong); }
 .btn--secondary:hover { border-color: var(--c-text-3); }
+.btn--gold { background: linear-gradient(135deg, var(--c-gold-1), var(--c-gold-2)); color: var(--c-gold-ink); border-color: var(--c-gold-border); box-shadow: 0 2px 8px -2px rgba(201, 138, 22, .45), inset 0 1px 0 rgba(255, 255, 255, .45); font-weight: 700; }
+.btn--gold:hover { background: linear-gradient(135deg, var(--c-gold-1), var(--c-gold-3)); }
+.btn--gold:active { background: var(--c-gold-3); }
+.btn--gold svg { color: var(--c-gold-ink); }
+.premium-tag { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 var(--s-3); border-radius: var(--r-pill); background: var(--c-gold-50); border: 1px solid var(--c-gold-200); color: var(--c-gold-ink); font: 700 13px/1 var(--f-sans); }
+.premium-tag svg { width: 16px; height: 16px; color: var(--c-gold-3); }
 .btn--dark { background: var(--c-black); color: var(--c-white); }
 .btn--dark:hover { background: var(--c-ink); }
 .btn--ghost { background: transparent; color: var(--c-text-2); }
@@ -119,60 +125,79 @@
 .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-3); }
 .section-head h2 { font: var(--t-h2); }
 
-/* ---------- Home card tile: quiet section accent with readable content ---------- */
-.theme-violet { --th-1: var(--th-violet-1); --th-2: var(--th-violet-2); --th-ink: var(--th-violet-ink); }
-.theme-blue { --th-1: var(--th-blue-1); --th-2: var(--th-blue-2); --th-ink: var(--th-blue-ink); }
-.theme-teal { --th-1: var(--th-teal-1); --th-2: var(--th-teal-2); --th-ink: var(--th-teal-ink); }
-.theme-amber { --th-1: var(--th-amber-1); --th-2: var(--th-amber-2); --th-ink: var(--th-amber-ink); }
-.theme-rose { --th-1: var(--th-rose-1); --th-2: var(--th-rose-2); --th-ink: var(--th-rose-ink); }
+/* ---------- Home cards: one hue family per section, a shade of it per card ----------
+   --sec-*  section colour (sidebar dot, heading bar, tints)
+   --vNa/b  four card shades (deep → light) of the section hue; cards cycle v1..v4 in order.
+   White text always sits on the deep corner of the gradient (bottom-left) for contrast. */
+.theme-violet { --th-1: var(--th-violet-1); --th-2: var(--th-violet-2); --th-ink: var(--th-violet-ink);
+  --sec-a: #4B36A6; --sec-b: #8A72E8; --sec-50: #F1EEFC; --sec-ink: #4B36A6;
+  --v1a: #3E2E8F; --v1b: #7562DC; --v2a: #4B36A6; --v2b: #8A72E8; --v3a: #5A3EB4; --v3b: #9B82F0; --v4a: #34297E; --v4b: #6553C9; }
+.theme-blue { --th-1: var(--th-blue-1); --th-2: var(--th-blue-2); --th-ink: var(--th-blue-ink);
+  --sec-a: #134BA8; --sec-b: #4A85EE; --sec-50: #EBF2FE; --sec-ink: #134BA8;
+  --v1a: #0D3A8C; --v1b: #3A72E3; --v2a: #134BA8; --v2b: #4A85EE; --v3a: #1C5AC0; --v3b: #5E97F4; --v4a: #0B2F73; --v4b: #2B5FC9; }
+.theme-teal { --th-1: var(--th-teal-1); --th-2: var(--th-teal-2); --th-ink: var(--th-teal-ink);
+  --sec-a: #0E6B66; --sec-b: #25B2A1; --sec-50: #E6F6F3; --sec-ink: #0E6B66;
+  --v1a: #0B5C5A; --v1b: #1C9F91; --v2a: #0E6B66; --v2b: #25B2A1; --v3a: #127A72; --v3b: #32C2AE; --v4a: #094C4B; --v4b: #168A80; }
+.theme-amber { --th-1: var(--th-amber-1); --th-2: var(--th-amber-2); --th-ink: var(--th-amber-ink);
+  --sec-a: #9A5610; --sec-b: #E59738; --sec-50: #FDF3E4; --sec-ink: #8A4B0B;
+  --v1a: #8A4B0B; --v1b: #DA852E; --v2a: #9A5610; --v2b: #E59738; --v3a: #A8620F; --v3b: #EDA748; --v4a: #7A3F08; --v4b: #C9731F; }
+.theme-rose { --th-1: var(--th-rose-1); --th-2: var(--th-rose-2); --th-ink: var(--th-rose-ink);
+  --sec-a: #9E2758; --sec-b: #E3608F; --sec-50: #FCEBF1; --sec-ink: #9E2758;
+  --v1a: #8C1F4F; --v1b: #D84F81; --v2a: #9E2758; --v2b: #E3608F; --v3a: #AD2F62; --v3b: #EC729D; --v4a: #7A1A45; --v4b: #C64172; }
 
 .tile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
 @media (min-width: 640px) { .tile-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-4); } }
 @media (min-width: 1280px) { .tile-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .tile {
-  position: relative; overflow: hidden;
-  display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: var(--s-3);
-  min-height: 112px; padding: var(--s-4); border: 1px solid var(--c-border); border-left: 3px solid var(--th-ink, var(--th-blue-ink)); border-radius: var(--r-md);
-  background: var(--c-surface); color: var(--c-text); text-align: left; text-decoration: none;
-  box-shadow: var(--sh-1);
-  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  --t-a: var(--v1a, #134BA8); --t-b: var(--v1b, #4A85EE);
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: var(--s-4);
+  min-height: 150px; padding: var(--s-4); border: 0; border-radius: var(--r-xl);
+  background: linear-gradient(220deg, var(--t-b) 0%, var(--t-a) 78%); color: var(--c-white); text-align: left; text-decoration: none;
+  box-shadow: 0 10px 22px -14px var(--t-a), 0 1px 2px rgba(16, 24, 40, .08);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
-.tile:hover { text-decoration: none; border-color: var(--c-border-strong); border-left-color: var(--th-ink, var(--th-blue-ink)); box-shadow: var(--sh-2); }
-.tile:active { transform: none; }
-.tile:focus-visible { border-radius: var(--r-md); box-shadow: var(--ring); }
+.tile::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, .22), transparent 55%); pointer-events: none; }
+.tile--v2 { --t-a: var(--v2a); --t-b: var(--v2b); }
+.tile--v3 { --t-a: var(--v3a); --t-b: var(--v3b); }
+.tile--v4 { --t-a: var(--v4a); --t-b: var(--v4b); }
+a.tile:hover, button.tile:hover { text-decoration: none; transform: translateY(-2px); box-shadow: 0 16px 28px -14px var(--t-a), 0 2px 4px rgba(16, 24, 40, .08); }
+.tile:focus-visible { border-radius: var(--r-xl); box-shadow: 0 0 0 3px var(--c-surface), 0 0 0 6px var(--t-a); }
 
-/* Small contextual icon */
-.tile-art { position: absolute; right: var(--s-4); bottom: var(--s-4); width: 28px; height: 28px; color: var(--th-ink, var(--c-primary)); opacity: .45; pointer-events: none; }
-.tile-art::before { display: none; }
-.tile-art svg { width: 100%; height: 100%; stroke-width: 1.7; }
-
-.tile-title {
-  position: relative; max-width: calc(100% - 26px);
-  font: 700 16px/21px var(--f-sans); letter-spacing: 0; color: var(--c-text);
-  overflow-wrap: anywhere;
-}
+/* Big icon in a frosted badge, plus an oversized faint echo of it in the corner */
+.tile-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .28); backdrop-filter: blur(4px); color: var(--c-white); }
+.tile-icon svg { width: 28px; height: 28px; stroke-width: 1.8; }
+.tile-art { position: absolute; right: -18px; bottom: -22px; z-index: -1; width: 124px; height: 124px; color: var(--c-white); opacity: .13; pointer-events: none; }
+.tile-art svg { width: 100%; height: 100%; stroke-width: 1.4; }
+.tile-text { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; max-width: 100%; }
+.tile-title { font: 700 17px/22px var(--f-sans); color: var(--c-white); letter-spacing: -.005em; overflow-wrap: anywhere; text-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
 .tile-meta {
-  position: relative; display: inline-flex; align-items: center; gap: 4px; max-width: 70%; height: 24px; padding: 0 var(--s-3);
-  border-radius: var(--r-sm); background: var(--c-surface-muted); color: var(--c-text-2);
-  font: var(--t-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 24px; padding: 0 10px;
+  border-radius: var(--r-pill); background: rgba(255, 255, 255, .2); color: var(--c-white);
+  font: 600 12px/1 var(--f-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .tile-meta svg { width: 12px; height: 12px; flex-shrink: 0; }
 
-/* Unavailable sections use a muted slate accent. */
-.tile--soon.tile { --th-1: var(--th-soon-1); --th-2: var(--th-soon-2); }
-.tile--soon .tile-art { opacity: .35; }
-.tile--soon:hover { transform: none; }
-.tile--soon:hover .tile-art { transform: none; }
+/* Coming soon: the same card in a quiet slate, clearly not tappable into content */
+.tile--soon.tile { --t-a: #4F5866; --t-b: #959EAB; box-shadow: 0 1px 2px rgba(16, 24, 40, .08); }
+.tile--soon .tile-icon { background: rgba(255, 255, 255, .14); }
+button.tile--soon:hover { transform: none; box-shadow: 0 1px 2px rgba(16, 24, 40, .08); }
 
 @media (min-width: 768px) {
-  .tile { min-height: 128px; padding: var(--s-4); }
-  .tile-art { width: 32px; height: 32px; right: var(--s-4); bottom: var(--s-4); }
-  .tile-title { font-size: 18px; line-height: 23px; }
+  .tile { min-height: 168px; padding: var(--s-5); }
+  .tile-title { font-size: 19px; line-height: 24px; }
+}
+@media (max-width: 479.98px) {
+  .tile { min-height: 140px; gap: var(--s-3); padding: 14px; border-radius: var(--r-lg); }
+  .tile-icon { width: 44px; height: 44px; border-radius: 13px; }
+  .tile-icon svg { width: 24px; height: 24px; }
+  .tile-title { font-size: 15px; line-height: 20px; }
+  .tile-art { width: 96px; height: 96px; }
 }
 
-/* Section heading carries the section's colour as a small accent bar */
+/* Section heading carries the section colour as a small accent bar */
 .home-sec .section-head h2 { display: flex; align-items: center; gap: var(--s-3); }
-.home-sec .section-head h2::before { content: ""; width: 3px; height: 18px; border-radius: 2px; background: var(--th-ink, var(--c-primary)); flex-shrink: 0; }
+.home-sec .section-head h2::before { content: ""; width: 4px; height: 20px; border-radius: 2px; background: linear-gradient(180deg, var(--sec-b, var(--c-primary)), var(--sec-a, var(--c-primary))); flex-shrink: 0; }
 
 /* ---------- Tags & status pills ---------- */
 .tag {
@@ -441,8 +466,6 @@ a.stat:hover { border-color: var(--c-border-strong); box-shadow: var(--sh-2); }
   position: fixed; left: 50%; bottom: calc(var(--s-6) + env(safe-area-inset-bottom)); transform: translateX(-50%);
   z-index: var(--z-toast); width: max-content; max-width: calc(100vw - 32px); pointer-events: none;
 }
-body.has-bottomnav .toast-region { bottom: calc(var(--h-bottomnav) + var(--s-4) + env(safe-area-inset-bottom)); }
-@media (min-width: 1024px) { body.has-bottomnav .toast-region { bottom: var(--s-8); } }
 .toast {
   display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-4) var(--s-3) var(--s-3);
   background: var(--c-ink); color: var(--c-white); border-radius: var(--r-md); box-shadow: var(--sh-3);

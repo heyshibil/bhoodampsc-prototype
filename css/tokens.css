@@ -19,6 +19,7 @@
   --c-bg: #F5F7F7;
   --c-surface: #FFFFFF;
   --c-surface-muted: #F4F5F5;
+  --c-panel-shade: #ECEEF1; /* test screen: the summary side, a step darker than --c-bg */
   --c-border: #E7E9EC;
   --c-border-strong: #D3D6DB;
   --c-text: #0B0C0E;
@@ -65,6 +66,14 @@
   --c-accent-hover: #554D7A;
   --c-accent-press: #494263;
   --c-gold: #F5B83D; /* skipped-question bar segment on the test screen */
+  /* Premium gold: used only for the Go Premium action and the premium member tag */
+  --c-gold-1: #FBD86B;
+  --c-gold-2: #F0B43C;
+  --c-gold-3: #DE9B1F;
+  --c-gold-ink: #3D2700;
+  --c-gold-border: #E2A62E;
+  --c-gold-50: #FFF6DC;
+  --c-gold-200: #F3D684;
 
   /* Typography */
   --f-sans: "Urbanist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
