@@ -58,11 +58,11 @@
     a.snapshot.questions.forEach((q) => { const s = reviewSpeed(a, q); if (s) out[s]++; });
     return out;
   }
+  /** Questions you can move through: the whole test (every section), narrowed only by the review filter.
+      Next / Previous therefore run across sections, and the section tab follows the current question. */
   function visibleIndexes(a) {
     return a.snapshot.questions.reduce((out, q, i) => {
-      const inSection = !hasSections(a) || !T.section || sectionForQuestion(q) === T.section;
-      const inFilter = !T.review || !T.filters || T.filters[reviewCategory(a, q)];
-      if (inSection && inFilter) out.push(i);
+      if (!T.review || !T.filters || T.filters[reviewCategory(a, q)]) out.push(i);
       return out;
     }, []);
   }
@@ -227,7 +227,7 @@
           <span class="ts-reattempt-label">Re-attempt<span class="hide-xs"> questions</span></span>
           <button type="button" class="ts-switch" role="switch" aria-checked="${String(!!T.reattempt)}" data-act="toggle-reattempt" aria-label="Re-attempt questions"><span class="ts-switch-knob"></span></button>
         </label>
-        <button type="button" class="btn btn--primary ts-nav-next" data-act="next" ${pos < 0 || pos === list.length - 1 ? 'disabled' : ''}><span class="hide-xs">Next</span>${icon('arrow-right')}</button>`;
+        <button type="button" class="btn btn--next ts-nav-next" data-act="next" ${pos < 0 || pos === list.length - 1 ? 'disabled' : ''}><span class="hide-xs">Next</span>${icon('arrow-right')}</button>`;
     }
     const marked = (a.markedQuestions || []).includes(q.id);
     const hasAnswer = a.answers[q.id] != null;
@@ -238,7 +238,7 @@
       <div class="ts-foot-group">
         <button type="button" class="btn btn--secondary ts-nav-prev" data-act="prev" ${i === 0 ? 'disabled' : ''} aria-label="Previous question">${icon('arrow-left')}<span class="hide-sm">Previous</span></button>
         ${i === n - 1 ? html`<button type="button" class="btn btn--primary ts-nav-next" data-act="submit">Finish${icon('check')}</button>`
-          : html`<button type="button" class="btn btn--primary ts-nav-next" data-act="next">${hasAnswer ? 'Save & next' : 'Next'}${icon('arrow-right')}</button>`}
+          : html`<button type="button" class="btn btn--next ts-nav-next" data-act="next">${hasAnswer ? 'Save & next' : 'Next'}${icon('arrow-right')}</button>`}
       </div>`;
   }
 
@@ -256,8 +256,16 @@
       : [['answered', 'Answered', c.answered], ['notanswered', 'Not answered', c.notanswered], ['marked', 'Marked', c.marked], ['marked-answered', 'Marked and answered', c['marked-answered']], ['unvisited', 'Not visited', c.unvisited]];
     const filterDraft = T.filterDraft || T.filters;
     const speed = T.review ? speedCounts(a) : null;
-    const groupTitle = hasSections(a) ? (T.section || sectionForQuestion(qs[i])) : 'All questions';
+    const groups = hasSections(a)
+      ? sectionList(a).map((title) => ({ title, idx: indexes.filter((k) => qs[k].subject === title) })).filter((g) => g.idx.length)
+      : [{ title: null, idx: indexes }];
+    const current = sectionForQuestion(qs[i]);
+    const palBtn = (k) => {
+      const st = qState(a, qs[k], k);
+      return html`<button type="button" class="pal pal--${st} ${k === i ? 'is-current' : ''}" data-act="jump" data-i="${k}" ${k === i ? raw('aria-current="step"') : ''} aria-label="Question ${k + 1}, ${STATE_LABEL[st]}">${k + 1}</button>`;
+    };
     return html`<div class="tp">
+      <div class="tp-top">
       <div class="tp-head">
         ${BP.ui.avatar(name, 'avatar--sm')}<span class="tp-user">${name}</span>
         ${T.review ? html`<button type="button" class="tp-filter-trigger ${T.filterOpen ? 'is-open' : ''} ${Object.values(T.filters).every(Boolean) ? '' : 'is-active'}" data-act="toggle-filters" aria-expanded="${String(!!T.filterOpen)}" aria-controls="tp-filter-popover">${icon('filter')}Filter</button>` : ''}
@@ -274,11 +282,14 @@
       ${T.review ? html`<section class="tp-speed" aria-labelledby="tp-speed-title"><h3 id="tp-speed-title" class="tp-section-label">Speed indicators</h3><div class="tp-speed-grid">
         ${SPEEDS.map(([key, label, ic]) => html`<div class="tp-speed-item tp-speed-item--${key}">${icon(ic)}<span class="tp-speed-label">${label}</span><b class="t-num">${speed[key]}</b></div>`)}
       </div></section>` : ''}
-      <div class="tp-group-head"><span>${hasSections(a) ? html`Section: <b>${groupTitle}</b>` : html`<b>${groupTitle}</b>`}</span><span class="t-num">${indexes.length}</span></div>
-      <div class="tp-grid" role="group" aria-label="Go to a question">${indexes.map((k) => {
-        const st = qState(a, qs[k], k);
-        return html`<button type="button" class="pal pal--${st} ${k === i ? 'is-current' : ''}" data-act="jump" data-i="${k}" ${k === i ? raw('aria-current="step"') : ''} aria-label="Question ${k + 1}, ${STATE_LABEL[st]}">${k + 1}</button>`;
-      })}</div>
+      </div>
+      <div class="tp-scroll" id="tp-scroll">
+        ${groups.map((g) => html`<section class="tp-group ${g.title && g.title === current ? 'is-current' : ''}" aria-label="${g.title || 'All questions'}">
+          <div class="tp-group-head"><span>${g.title ? html`Section: <b>${g.title}</b>` : html`<b>All questions</b>`}</span><span class="t-num">${g.idx.length}</span></div>
+          <div class="tp-grid" role="group" aria-label="Go to a question${g.title ? ' in ' + g.title : ''}">${g.idx.map(palBtn)}</div>
+        </section>`)}
+        ${indexes.length ? '' : html`<p class="tp-empty">No questions match this filter.</p>`}
+      </div>
       <div class="tp-foot">
         ${T.review ? html`<a class="btn btn--secondary btn--block" href="#/user/attempt/${a.id}/result">${icon('list-checks')}Score summary</a>`
           : html`<button type="button" class="btn btn--primary btn--block tp-submit" data-act="submit">${icon('send')}Submit test</button>`}
@@ -292,8 +303,22 @@
     document.getElementById('ts-sections').innerHTML = String(sections(a));
     document.getElementById('ts-body').innerHTML = String(body(a));
     document.getElementById('ts-foot').innerHTML = String(foot(a));
+    const oldScroll = document.getElementById('tp-scroll');
+    const keepTop = oldScroll ? oldScroll.scrollTop : 0;
     document.getElementById('ts-panel').innerHTML = String(panel(a));
     syncProgressDrawer();
+    const scroller = document.getElementById('tp-scroll');
+    const cur = scroller && scroller.querySelector('.pal.is-current');
+    if (scroller) {
+      scroller.scrollTop = keepTop;
+      if (cur) {
+        const head = (cur.closest('.tp-group') || scroller).querySelector('.tp-group-head');
+        const pad = (head ? head.offsetHeight : 0) + 8;
+        const top = cur.offsetTop - scroller.offsetTop, bottom = top + cur.offsetHeight;
+        if (top - pad < scroller.scrollTop) scroller.scrollTop = Math.max(0, top - pad);
+        else if (bottom + 8 > scroller.scrollTop + scroller.clientHeight) scroller.scrollTop = bottom + 8 - scroller.clientHeight;
+      }
+    }
     const c = counts(a);
     const n = a.snapshot.questions.length;
     const pct = T.review ? (curIndex(a) + 1) / n * 100 : answeredCount(c) / n * 100;
@@ -555,8 +580,8 @@
     section(el) {
       const a = attempt(), title = el.dataset.value;
       const first = a.snapshot.questions.findIndex((q) => sectionForQuestion(q) === title && (!T.review || T.filters[reviewCategory(a, q)]));
-      T.section = title;
-      if (first >= 0) goTo(first); else draw();
+      if (first >= 0) goTo(first);
+      else BP.ui.toast('No questions in ' + title + ' match the filter.');
     },
     'toggle-mark'() { const a = attempt(), q = a.snapshot.questions[curIndex(a)]; E().toggleMark(a.id, q.id); draw(); },
     'toggle-filters'() { T.filterOpen = !T.filterOpen; T.filterDraft = Object.assign({}, T.filters); draw(); },

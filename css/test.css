@@ -185,7 +185,7 @@ button.opt:hover:not([disabled]):not([aria-disabled="true"]) { border-color: var
 .mobile-mark-label { display: none; }
 .ts-mark-button.is-marked { border-color: var(--c-accent); color: var(--c-accent); background: var(--c-accent-50); }
 .ts-clear:disabled { opacity: .4; }
-body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-area-inset-bottom)); }
+body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-area-inset-bottom)); left: var(--s-4); right: auto; }
 
 /* Review footer: re-attempt switch between the nav buttons */
 .ts-reattempt-toggle { display: inline-flex; align-items: center; gap: var(--s-3); padding: 0 var(--s-2); color: var(--c-text-2); font: 600 14px/1 var(--f-sans); cursor: pointer; white-space: nowrap; }
@@ -232,7 +232,10 @@ body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-a
 }
 .ts-layout .ts-main { padding: 0; max-width: none; margin: 0; flex: none; }
 
-.tp { display: flex; flex-direction: column; gap: var(--s-4); background: var(--c-surface); }
+.ts--panel { --ts-side: 360px; --ts-foot-h: 69px; }
+/* Panel: fixed top (who, filter, legend, speed) · scrolling question list · action row level with the footer */
+.tp { display: flex; flex-direction: column; min-height: 0; background: var(--c-surface); }
+.tp-top { flex: none; display: flex; flex-direction: column; gap: var(--s-4); padding-bottom: var(--s-3); }
 .tp-head { display: flex; align-items: center; gap: var(--s-2); min-height: 36px; }
 .tp-user { flex: 1 1 auto; min-width: 0; font: 600 14px/20px var(--f-sans); color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tp-close { display: none; }
@@ -254,10 +257,17 @@ body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-a
 .tp-speed-item--superfast svg, .tp-speed-item--on-time svg { color: var(--c-success); }
 .tp-speed-item--slow svg { color: var(--c-error); }
 
-.tp-group-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); margin: 0 calc(-1 * var(--s-4)); padding: var(--s-2) var(--s-4); background: var(--c-surface-muted); font: var(--t-caption); color: var(--c-text-2); }
+.tp-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 calc(-1 * var(--s-4)); padding: 0 var(--s-4) var(--s-4); scrollbar-width: thin; scrollbar-color: var(--c-border-strong) transparent; }
+.tp-group-head {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: var(--s-2);
+  margin: 0 calc(-1 * var(--s-4)); padding: var(--s-2) var(--s-4); background: var(--c-surface-muted); border-block: 1px solid var(--c-border);
+  font: var(--t-caption); color: var(--c-text-2);
+}
 .tp-group-head b { color: var(--c-text); font-weight: 700; }
-.tp-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--s-3) var(--s-2); }
-.tp-foot { position: sticky; bottom: 0; margin: 0 calc(-1 * var(--s-4)) calc(-1 * var(--s-4)); padding: var(--s-3) var(--s-4) var(--s-4); background: var(--c-surface); border-top: 1px solid var(--c-border); }
+.tp-group.is-current .tp-group-head { box-shadow: inset 3px 0 0 var(--c-primary); }
+.tp-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--s-3) var(--s-2); padding: var(--s-3) 2px var(--s-4); }
+.tp-empty { padding: var(--s-6) 0; text-align: center; font: var(--t-body-sm); color: var(--c-text-3); }
+.tp-foot { flex: none; display: flex; align-items: center; height: var(--ts-foot-h); margin: 0 calc(-1 * var(--s-4)); padding: 0 var(--s-4); background: var(--c-surface); border-top: 1px solid var(--c-border); }
 
 .tp-filters { display: grid; gap: 2px; padding: var(--s-3); border: 1px solid var(--c-border-strong); border-radius: var(--r-md); background: var(--c-surface); box-shadow: var(--sh-2); }
 .tp-filters-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-1); }
@@ -275,11 +285,11 @@ body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-a
 /* Drawer below 1024px */
 .ts-progress-backdrop { display: none; }
 @media (max-width: 1023.98px) {
-  .ts-panel { position: fixed; z-index: var(--z-sheet); top: 0; right: 0; bottom: 0; width: min(92vw, 380px); overflow-y: auto; overscroll-behavior: contain; background: var(--c-surface); box-shadow: var(--sh-3); transform: translateX(105%); visibility: hidden; transition: transform var(--dur) var(--ease), visibility var(--dur) var(--ease); }
+  .ts-panel { position: fixed; z-index: var(--z-sheet); top: 0; right: 0; bottom: 0; width: min(92vw, 380px); display: flex; overflow: hidden; background: var(--c-surface); box-shadow: var(--sh-3); transform: translateX(105%); visibility: hidden; transition: transform var(--dur) var(--ease), visibility var(--dur) var(--ease); }
   .ts-panel.is-open { transform: translateX(0); visibility: visible; }
-  .ts-panel .tp { min-height: 100%; padding: calc(var(--s-4) + env(safe-area-inset-top)) var(--s-4) var(--s-4); }
+  .ts-panel .tp { flex: 1 1 auto; height: 100%; padding: calc(var(--s-4) + env(safe-area-inset-top)) var(--s-4) 0; }
   .ts-panel .tp-close { display: inline-grid; flex: 0 0 auto; margin-right: -8px; }
-  .ts-panel .tp-foot { margin-top: auto; padding-bottom: calc(var(--s-4) + env(safe-area-inset-bottom)); }
+  .ts-panel .tp-foot { height: auto; padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom)); }
   .ts-progress-backdrop.is-open { display: block; position: fixed; z-index: calc(var(--z-sheet) - 1); inset: 0; width: 100%; height: 100%; border: 0; background: var(--c-scrim); animation: fade-in var(--dur) var(--ease); }
   body.ts-progress-open { overflow: hidden; }
 }
@@ -289,15 +299,14 @@ body.in-test .demo-fab, body:has(.ts) .demo-fab { bottom: calc(84px + env(safe-a
   .ts--panel .ts-top { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
   /* Question column on the left; the summary side sits on a slightly darker shade so the two
      areas separate clearly but quietly. */
-  .ts--panel { --ts-side: 360px; --ts-foot-h: 69px; }
   .ts-layout { display: block; max-width: none; margin: 0; padding: var(--s-5) calc(var(--ts-side) + var(--s-6)) calc(var(--ts-foot-h) + var(--s-6)) var(--s-6); }
   .ts-layout .ts-main { max-width: 960px; margin: 0 auto; }
-  .ts-panel { position: fixed; z-index: 1; top: 75px; right: 0; bottom: var(--ts-foot-h); width: var(--ts-side); padding: var(--s-5); overflow-y: auto; overscroll-behavior: contain; background: var(--c-panel-shade); border-left: 1px solid var(--c-border-strong); }
-  .tp { padding: var(--s-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); box-shadow: var(--sh-1); }
-  .tp-foot { border-radius: 0 0 var(--r-lg) var(--r-lg); }
+  /* Full height to the bottom of the screen: only the question list scrolls, and the panel's action
+     row (Submit test / Score summary) sits on the same line as the footer's Next. */
+  .ts-panel { position: fixed; z-index: 1; top: 75px; right: 0; bottom: 0; width: var(--ts-side); display: flex; padding: var(--s-4) var(--s-4) 0; overflow: hidden; background: var(--c-panel-shade); border-left: 1px solid var(--c-border-strong); }
+  .tp { flex: 1 1 auto; padding: var(--s-4) var(--s-4) 0; border: 1px solid var(--c-border); border-bottom: 0; border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: var(--sh-1); }
   .ts-submit-inline { display: none; }
-  .ts--panel .ts-foot { padding-left: var(--s-6); padding-right: calc(var(--ts-side) + var(--s-6)); }
-  .ts--panel .ts-foot::after { content: ""; position: absolute; top: -1px; right: 0; bottom: 0; width: var(--ts-side); background: var(--c-panel-shade); border-left: 1px solid var(--c-border-strong); border-top: 1px solid var(--c-border); pointer-events: none; }
+  .ts--panel .ts-foot { right: var(--ts-side); padding-left: var(--s-6); padding-right: var(--s-6); }
 }
 
 /* Submit confirm: per-section summary */

@@ -42,6 +42,11 @@
 .btn--gold svg { color: var(--c-gold-ink); }
 .premium-tag { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 var(--s-3); border-radius: var(--r-pill); background: var(--c-gold-50); border: 1px solid var(--c-gold-200); color: var(--c-gold-ink); font: 700 13px/1 var(--f-sans); }
 .premium-tag svg { width: 16px; height: 16px; color: var(--c-gold-3); }
+/* Next (moving through questions): a strong neutral, so blue stays reserved for the one commit action
+   on the screen (Submit / Finish) and the status colours keep their meaning. */
+.btn--next { background: var(--c-ink); color: var(--c-white); }
+.btn--next:hover { background: var(--c-black); }
+.btn--next:active { background: #000; }
 .btn--dark { background: var(--c-black); color: var(--c-white); }
 .btn--dark:hover { background: var(--c-ink); }
 .btn--ghost { background: transparent; color: var(--c-text-2); }
