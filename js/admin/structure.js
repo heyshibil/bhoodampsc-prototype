@@ -8,7 +8,7 @@
   function settingTags(c) {
     const s = c.settings || {};
     if (c.template !== 'paper_test' && c.template !== 'current_affairs') return '';
-    return html`${s.usesStage ? tag('primary', 'Prelims / Mains') : ''}${s.usesYear ? tag('primary', 'Year') : ''}${s.usesSubject ? tag('primary', c.template === 'current_affairs' ? 'Monthly subjects' : 'Subject') : ''}`;
+    return html`${s.usesLevel ? tag('primary', 'Education level') : ''}${s.usesStage ? tag('primary', 'Prelims / Mains') : ''}${s.usesSubject ? tag('primary', c.template === 'current_affairs' ? 'Monthly topics' : 'Subject') : ''}${s.usesSubject && s.usesSubtopic ? tag('primary', 'Subtopic') : ''}${s.usesYear ? tag('primary', 'Year') : ''}`;
   }
   function contentCount(c) {
     const st = BP.store.state;

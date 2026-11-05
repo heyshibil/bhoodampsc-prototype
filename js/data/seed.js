@@ -40,7 +40,7 @@
       ({ id, sectionId, order, title, icon, template, settings: settings || {}, status: status || 'live' });
 
     const cards = [
-      card('card_upsc_psc', 'sec_special', 1, 'UPSC / PSC', 'landmark', 'paper_test', stageOnly),
+      card('card_upsc_psc', 'sec_special', 1, 'UPSC / PSC', 'landmark', 'paper_test', Object.assign({ usesSubject: true, usesSubtopic: true }, stageOnly)),
       card('card_psc_notification', 'sec_special', 2, 'PSC Notification', 'bell', 'notification'),
       card('card_pyq_download', 'sec_special', 3, 'PYQ Papers Download', 'download', 'paper_download'),
 
@@ -48,8 +48,8 @@
       card('card_pyq_12th', 'sec_pyq', 2, '12th', 'book-open', 'paper_test', Object.assign({ usesTopics: true }, stageYear)),
       card('card_pyq_degree', 'sec_pyq', 3, 'Degree', 'graduation-cap', 'paper_test', stageYear),
       card('card_topic', 'sec_pyq', 4, 'Topic', 'layers', 'topic_test'),
-      card('card_special_topic', 'sec_pyq', 5, 'Special Topic', 'target', 'paper_test', stageYear),
-      card('card_sectional', 'sec_pyq', 6, 'Sectional', 'layout', 'paper_test', stageYear),
+      card('card_special_topic', 'sec_pyq', 5, 'Special Topic', 'target', 'paper_test', Object.assign({ usesLevel: true }, stageYear)),
+      card('card_sectional', 'sec_pyq', 6, 'Sectional', 'layout', 'paper_test', { usesStage: false, usesSubject: true, usesYear: true }),
 
       card('card_mock_10th', 'sec_mock', 1, '10th', 'book', 'paper_test', stageOnly),
       card('card_mock_12th', 'sec_mock', 2, '12th', 'book-open', 'paper_test', stageOnly),
@@ -64,10 +64,22 @@
       { id: 'subj_kerala_history', cardId: 'card_topic', title: 'Kerala History', icon: 'landmark', order: 1 },
       { id: 'subj_constitution', cardId: 'card_topic', title: 'Indian Constitution', icon: 'scale', order: 2 },
       { id: 'subj_science', cardId: 'card_topic', title: 'General Science', icon: 'flask', order: 3 },
+      { id: 'subj_upsc_gs', cardId: 'card_upsc_psc', title: 'General Studies', icon: 'globe', order: 1 },
+      { id: 'subj_upsc_polity', cardId: 'card_upsc_psc', title: 'Indian Polity', icon: 'scale', order: 2 },
+      { id: 'subj_upsc_history', cardId: 'card_upsc_psc', title: 'History', icon: 'landmark', order: 3 },
+      { id: 'subj_sec_maths', cardId: 'card_sectional', title: 'Maths', icon: 'calculator', order: 1 },
+      { id: 'subj_sec_english', cardId: 'card_sectional', title: 'English', icon: 'languages', order: 2 },
+      { id: 'subj_sec_gk', cardId: 'card_sectional', title: 'General Knowledge', icon: 'globe', order: 3 },
     ];
     const subsections = [
       { id: 'subsec_reformers', subjectId: 'subj_kerala_history', title: 'Social reformers', order: 1 },
       { id: 'subsec_freedom', subjectId: 'subj_kerala_history', title: 'Freedom struggle in Kerala', order: 2 },
+      { id: 'subsec_con_basics', subjectId: 'subj_constitution', title: 'Constitution basics', order: 1 },
+      { id: 'subsec_sci_basics', subjectId: 'subj_science', title: 'General science basics', order: 1 },
+      { id: 'subsec_upsc_gs_full', subjectId: 'subj_upsc_gs', title: 'Full syllabus', order: 1 },
+      { id: 'subsec_upsc_constitution', subjectId: 'subj_upsc_polity', title: 'Constitution basics', order: 1 },
+      { id: 'subsec_upsc_freedom', subjectId: 'subj_upsc_history', title: 'Freedom movement', order: 1 },
+      { id: 'subsec_upsc_renaissance', subjectId: 'subj_upsc_history', title: 'Kerala renaissance', order: 2 },
     ];
 
     const years = [2021, 2022, 2023, 2024];
@@ -156,5 +168,5 @@
     };
   }
 
-  BP.seed = { version: 7, build, DISTRICTS, QUALIFICATIONS, isoDaysAgo };
+  BP.seed = { version: 8, build, DISTRICTS, QUALIFICATIONS, isoDaysAgo };
 })();

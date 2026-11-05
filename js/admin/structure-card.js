@@ -1,4 +1,4 @@
-/* Admin: card form (title, icon, section, flow template + settings, status), subjects/subsections, years and categories. */
+/* Admin: card form (title, icon, section, flow template + settings, status), subjects/subtopics, years and categories. */
 (function () {
   const BP = (window.BP = window.BP || {});
   const { html, raw, icon, iconTile } = BP.ui;
@@ -18,6 +18,18 @@
     return F;
   }
   const redraw = () => BP.router.render({ rerender: true });
+
+  /** Published tests a newly switched-on filter would hide from users, because they have no value for it. */
+  function hiddenByFilters(f) {
+    const c = f.card;
+    if (!f.id || c.template !== 'paper_test') return null;
+    const checks = [['usesLevel', 'level', 'education level'], ['usesStage', 'stage', 'Prelims / Mains stage'], ['usesYear', 'year', 'year']].filter(([key]) => c.settings[key]);
+    const tests = BP.store.q.testsFor(f.id);
+    const hidden = tests.filter((t) => checks.some(([, field]) => !t[field]));
+    if (!hidden.length) return null;
+    const missing = checks.filter(([, field]) => hidden.some((t) => !t[field])).map(([, , label]) => label).join(', ');
+    return html`<div class="notice notice--warning">${icon('alert-triangle')}<span>${hidden.length} published ${hidden.length === 1 ? 'test has' : 'tests have'} no ${missing}. Users will not see ${hidden.length === 1 ? 'it' : 'them'} until the creator adds this.</span></div>`;
+  }
 
   function previewTile(c) {
     return BP.homeTile(Object.assign({ id: F && F.id }, c), BP.store.byId('sections', c.sectionId), { preview: true, meta: c.status === 'coming_soon' ? 'Coming soon' : BP.TEMPLATES[c.template].label });
@@ -53,9 +65,13 @@
                 <input type="radio" name="cf-tpl" value="${k}" ${k === c.template ? 'checked' : ''}>
                 <span><span class="choice-title">${BP.TEMPLATES[k].label}</span><br><span class="choice-desc">${BP.TEMPLATES[k].description}</span></span></label>`)}</div>
               ${BP.TEMPLATES[c.template].settings.length ? html`<div class="settings-box"><span class="field-label">Template settings</span>
-                ${BP.TEMPLATES[c.template].settings.map((s) => html`<label class="switch"><input type="checkbox" data-setting="${s.key}" ${c.settings[s.key] ? 'checked' : ''}><span class="switch-track"></span><span class="t-body-sm t-strong">${s.label}</span></label>`)}</div>` : ''}
-              ${c.template === 'topic_test' || (c.template === 'paper_test' && c.settings.usesSubject) ? html`<div class="notice">${icon('layers')}<span>${f.id ? html`Manage this card's subjects and subsections on the <a href="#/admin/structure/card/${f.id}/subjects">Subjects page</a>.` : 'After saving, you can add subjects and subsections.'}</span></div>` : ''}
-              ${c.template === 'current_affairs' && c.settings.usesSubject ? html`<p class="field-help">Creators add a subject to each question. Users can filter by subject in Monthly.</p>` : ''}
+                ${BP.TEMPLATES[c.template].settings.map((s) => {
+                  const locked = s.requires && !c.settings[s.requires];
+                  return html`<label class="switch"><input type="checkbox" data-setting="${s.key}" ${c.settings[s.key] && !locked ? 'checked' : ''} ${locked ? 'disabled' : ''}><span class="switch-track"></span><span class="t-body-sm t-strong">${s.label}</span></label>`;
+                })}</div>` : ''}
+              ${hiddenByFilters(f) || ''}
+              ${c.template === 'topic_test' || (c.template === 'paper_test' && c.settings.usesSubject) ? html`<div class="notice">${icon('layers')}<span>${f.id ? html`Manage this card's subjects${c.template === 'topic_test' || c.settings.usesSubtopic ? ' and subtopics' : ''} on the <a href="#/admin/structure/card/${f.id}/subjects">Subjects page</a>.` : `After saving, you can add subjects${c.template === 'topic_test' || c.settings.usesSubtopic ? ' and subtopics' : ''}.`}</span></div>` : ''}
+              ${c.template === 'current_affairs' && c.settings.usesSubject ? html`<p class="field-help">Creators add a topic to each question. Users choose a topic after opening a month in Monthly.</p>` : ''}
               ${usage && c.template !== BP.store.byId('cards', f.id).template ? html`<div class="notice notice--warning">${icon('alert-triangle')}<span>This card already has ${usage} content items made for the ${BP.TEMPLATES[BP.store.byId('cards', f.id).template].label} flow. They may not show correctly in the new flow.</span></div>` : ''}
               <div class="notice notice--accent">${icon('lightbulb')}<span><b>New cards need no development. A new kind of flow does.</b> Any card can use any of these five flows.</span></div>
             </section>
@@ -83,7 +99,15 @@
         F.card.settings = el.value === 'paper_test' ? { usesStage: true, usesYear: false, usesSubject: false } : el.value === 'current_affairs' ? { usesSubject: false } : {};
         redraw();
       }));
-      root.querySelectorAll('[data-setting]').forEach((el) => el.addEventListener('change', () => { F.card.settings[el.dataset.setting] = el.checked; }));
+      root.querySelectorAll('[data-setting]').forEach((el) => el.addEventListener('change', () => {
+        const key = el.dataset.setting;
+        F.card.settings[key] = el.checked;
+        // Settings that depend on this one switch off with it.
+        BP.TEMPLATES[F.card.template].settings.filter((s) => s.requires === key && !el.checked).forEach((s) => { F.card.settings[s.key] = false; });
+        redraw();
+        const again = document.querySelector('[data-setting="' + key + '"]');
+        if (again) again.focus();
+      }));
     },
     actions: {
       'pick-icon'(el) { F.card.icon = el.dataset.v; redraw(); },
@@ -107,7 +131,7 @@
     },
   });
 
-  /* ---------- Subjects and subsections (Topic Test and subject-filtered Paper Test cards) ---------- */
+  /* ---------- Subjects and subtopics (Topic Test and subject-filtered Paper Test cards) ---------- */
   BP.router.add('/admin/structure/card/:id/subjects', {
     role: 'admin', chrome: 'panel', nav: 'structure', title: 'Subjects',
     render(ctx) {
@@ -115,20 +139,24 @@
       if (!card || (card.template !== 'topic_test' && !(card.template === 'paper_test' && card.settings.usesSubject))) return BP.ui.emptyState({ title: 'Subjects are not enabled for this card' });
       const st = BP.store.state;
       const subjects = st.subjects.filter((s) => s.cardId === card.id).sort(byOrder);
-      return html`${BP.ad.pageHead(card.title + ': subjects', 'Users choose a subject, then a subsection if the subject has any. Creators pick from these when building topic tests.',
+      const isTopic = card.template === 'topic_test';
+      const usesSubtopics = isTopic || card.settings.usesSubtopic;
+      const intro = isTopic ? 'Users choose a subject, then a subtopic if the subject has any. Creators pick from these when building tests.'
+        : 'Users filter this card\'s tests by subject' + (usesSubtopics ? ', then by subtopic' : '') + '. Creators pick from these when building tests.';
+      return html`${BP.ad.pageHead(card.title + ': subjects', intro,
           html`<button type="button" class="btn btn--primary" data-act="add-subject">${icon('plus')}Add subject</button>`, ['#/admin/structure', 'Structure'])}
         ${subjects.length ? html`<div class="stack gap-4">${subjects.map((s, i) => {
           const subs = st.subsections.filter((x) => x.subjectId === s.id).sort(byOrder);
           return html`<section class="card card--flush struct-section">
-            <header class="struct-head">${iconTile(s.icon || 'book', '', 'sm')}<div class="grow"><h2 class="t-h3">${s.title}</h2><span class="t-caption">${subs.length ? subs.length + ' subsections' : 'No subsections: users go straight to the tests'} · ${BP.store.q.testsFor(card.id, { subjectId: s.id }).length} published tests</span></div>
+            <header class="struct-head">${iconTile(s.icon || 'book', '', 'sm')}<div class="grow"><h2 class="t-h3">${s.title}</h2><span class="t-caption">${usesSubtopics ? (subs.length ? subs.length + (subs.length === 1 ? ' subtopic' : ' subtopics') : 'No subtopics: users go straight to the tests') + ' · ' : ''}${((n) => n + (n === 1 ? ' published test' : ' published tests'))(BP.store.q.testsFor(card.id, { subjectId: s.id }).length)}</span></div>
               <button type="button" class="icon-btn icon-btn--plain" data-act="subj-up" data-id="${s.id}" aria-label="Move ${s.title} up" ${i === 0 ? 'disabled' : ''}>${icon('arrow-up')}</button>
               <button type="button" class="icon-btn icon-btn--plain" data-act="subj-down" data-id="${s.id}" aria-label="Move ${s.title} down" ${i === subjects.length - 1 ? 'disabled' : ''}>${icon('arrow-down')}</button>
               <button type="button" class="icon-btn icon-btn--plain" data-act="subj-rename" data-id="${s.id}" aria-label="Rename ${s.title}">${icon('pencil')}</button></header>
-            ${subs.length ? html`<ul class="struct-cards" role="list">${subs.map((x, j) => html`<li class="struct-card">${icon('list')}<span class="grow">${x.title}</span>
+            ${usesSubtopics && subs.length ? html`<ul class="struct-cards" role="list">${subs.map((x, j) => html`<li class="struct-card">${icon('list')}<span class="grow">${x.title}</span>
               <button type="button" class="icon-btn icon-btn--plain" data-act="sub-up" data-id="${x.id}" aria-label="Move ${x.title} up" ${j === 0 ? 'disabled' : ''}>${icon('arrow-up')}</button>
               <button type="button" class="icon-btn icon-btn--plain" data-act="sub-down" data-id="${x.id}" aria-label="Move ${x.title} down" ${j === subs.length - 1 ? 'disabled' : ''}>${icon('arrow-down')}</button>
               <button type="button" class="icon-btn icon-btn--plain" data-act="sub-rename" data-id="${x.id}" aria-label="Rename ${x.title}">${icon('pencil')}</button></li>`)}</ul>` : ''}
-            <footer class="struct-foot"><button type="button" class="btn btn--ghost btn--sm" data-act="add-sub" data-id="${s.id}">${icon('plus')}Add subsection</button></footer>
+            ${usesSubtopics ? html`<footer class="struct-foot"><button type="button" class="btn btn--ghost btn--sm" data-act="add-sub" data-id="${s.id}">${icon('plus')}Add subtopic</button></footer>` : ''}
           </section>`;
         })}</div>` : BP.ui.emptyState({ icon: 'layers', title: 'No subjects yet', text: 'Add the first subject, for example "Kerala History".' })}`;
     },
@@ -141,12 +169,12 @@
       },
       'subj-rename'(el) { const s0 = BP.store.byId('subjects', el.dataset.id); BP.ad.prompt({ title: 'Rename subject', label: 'Subject name', value: s0.title }, (v) => { BP.store.update((s) => { s.subjects.find((x) => x.id === s0.id).title = v; }); }); },
       'add-sub'(el) {
-        BP.ad.prompt({ title: 'Add a subsection', label: 'Subsection name', placeholder: 'For example: Social reformers', confirm: 'Add subsection' }, (v) => {
+        BP.ad.prompt({ title: 'Add a subtopic', label: 'Subtopic name', placeholder: 'For example: Social reformers', confirm: 'Add subtopic' }, (v) => {
           BP.store.update((s) => { s.subsections.push({ id: BP.store.uid('subsec'), subjectId: el.dataset.id, title: v, order: BP.ad.nextOrder(s.subsections.filter((x) => x.subjectId === el.dataset.id)) }); });
-          BP.ui.toast('Subsection added', { type: 'success' });
+          BP.ui.toast('Subtopic added', { type: 'success' });
         });
       },
-      'sub-rename'(el) { const x0 = BP.store.byId('subsections', el.dataset.id); BP.ad.prompt({ title: 'Rename subsection', label: 'Subsection name', value: x0.title }, (v) => { BP.store.update((s) => { s.subsections.find((x) => x.id === x0.id).title = v; }); }); },
+      'sub-rename'(el) { const x0 = BP.store.byId('subsections', el.dataset.id); BP.ad.prompt({ title: 'Rename subtopic', label: 'Subtopic name', value: x0.title }, (v) => { BP.store.update((s) => { s.subsections.find((x) => x.id === x0.id).title = v; }); }); },
       'subj-up'(el) { BP.ad.move('subjects', el.dataset.id, -1, (a, b) => a.cardId === b.cardId); },
       'subj-down'(el) { BP.ad.move('subjects', el.dataset.id, 1, (a, b) => a.cardId === b.cardId); },
       'sub-up'(el) { BP.ad.move('subsections', el.dataset.id, -1, (a, b) => a.subjectId === b.subjectId); },

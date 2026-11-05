@@ -7,7 +7,7 @@
   const clone = (v) => JSON.parse(JSON.stringify(v));
 
   const TYPES = {
-    tests: { label: 'Test', icon: 'file-text', fields: ['cardId', 'title', 'stage', 'year', 'subjectId', 'subsectionId', 'durationMin', 'marksPerQuestion', 'rules', 'questions'], defaults: () => ({ isPremium: false, negativeMarking: true, negativeValue: 1 / 3 }) },
+    tests: { label: 'Test', icon: 'file-text', fields: ['cardId', 'title', 'level', 'stage', 'year', 'subjectId', 'subsectionId', 'durationMin', 'marksPerQuestion', 'rules', 'questions'], defaults: () => ({ isPremium: false, negativeMarking: true, negativeValue: 1 / 3 }) },
     papers: { label: 'Question paper', icon: 'download', fields: ['cardId', 'title', 'categoryId', 'year', 'fileName', 'fileSize'], defaults: () => ({ isPremium: false }) },
     applications: { label: 'PSC application', icon: 'bell', fields: ['cardId', 'title', 'qualification', 'lastDate', 'vacancy', 'extraQualifications', 'stage', 'otherDetails', 'officialLink'], defaults: () => ({}) },
     exams: { label: 'PSC exam', icon: 'calendar', fields: ['cardId', 'title', 'startDate', 'endDate', 'otherDetails', 'officialLink'], defaults: () => ({}) },
@@ -148,13 +148,13 @@
     const card = BP.store.byId('cards', f.cardId);
     if (type === 'tests') {
       if (!String(f.title || '').trim()) e.push('Add a test title.');
+      if (card.template === 'paper_test' && card.settings.usesLevel && !f.level) e.push('Choose an education level.');
       if (card.template === 'paper_test' && card.settings.usesStage && !f.stage) e.push('Choose Prelims or Mains.');
       if (card.template === 'paper_test' && card.settings.usesYear && !f.year) e.push('Choose a year.');
-      if (card.template === 'paper_test' && card.settings.usesSubject && !f.subjectId) e.push('Choose a subject.');
-      if (card.template === 'topic_test') {
-        if (!f.subjectId) e.push('Choose a subject.');
-        else if (S().subsections.some((x) => x.subjectId === f.subjectId) && !f.subsectionId) e.push('Choose a subsection.');
-      }
+      const usesSubject = card.template === 'topic_test' || (card.template === 'paper_test' && card.settings.usesSubject);
+      const usesSubtopic = card.template === 'topic_test' || (usesSubject && card.settings.usesSubtopic);
+      if (usesSubject && !f.subjectId) e.push('Choose a subject.');
+      else if (usesSubtopic && S().subsections.some((x) => x.subjectId === f.subjectId) && !f.subsectionId) e.push('Choose a subtopic.');
       if (!(f.durationMin >= 1 && f.durationMin <= 180)) e.push('Duration must be between 1 and 180 minutes.');
       if (!(f.marksPerQuestion > 0)) e.push('Marks per question must be more than 0.');
       if (!f.questions.length) e.push('Add at least one question.');
@@ -179,7 +179,7 @@
     if (type === 'caQuestions') {
       const issues = questionIssues(f);
       if (issues.length) e.push('Complete: ' + issues.join(', ') + '.');
-      if (card && card.settings.usesSubject && !String(f.subject || '').trim()) e.push('Add a subject.');
+      if (card && card.settings.usesSubject && !String(f.subject || '').trim()) e.push('Add a topic.');
       if (!f.publishDate) e.push('Choose a publish date.');
     }
     return e;
@@ -194,13 +194,27 @@
   }
   function testPath(t) {
     const p = cardPath(t.cardId);
-    if (t.stage) p.push(t.stage === 'prelims' ? 'Prelims' : 'Mains');
+    const s = (BP.store.byId('cards', t.cardId) || {}).settings || {};
+    if (s.usesLevel && t.level) p.push(t.level);
+    if (s.usesStage && t.stage) p.push(t.stage === 'prelims' ? 'Prelims' : 'Mains');
     if (t.year) p.push(String(t.year));
     const subj = t.subjectId && BP.store.byId('subjects', t.subjectId);
     if (subj) p.push(subj.title);
     const sub = t.subsectionId && BP.store.byId('subsections', t.subsectionId);
     if (sub) p.push(sub.title);
     return p;
+  }
+  /** The test list a test sits in, with its filters selected, for Back links. */
+  function testListHref(t) {
+    const card = BP.store.byId('cards', t.cardId);
+    if (!card) return '#/user/home';
+    const s = card.settings || {};
+    const path = '/user/card/' + card.id;
+    if (card.template === 'topic_test') return BP.router.href(path, { subject: t.subjectId, sub: t.subsectionId || 'none' });
+    return BP.router.href(path, {
+      level: s.usesLevel ? t.level : null, stage: s.usesStage ? t.stage : null,
+      subject: s.usesSubject ? t.subjectId : null, sub: s.usesSubtopic ? t.subsectionId : null, year: s.usesYear ? t.year : null,
+    });
   }
 
   /* ---------- Current affairs buckets (worked out from the date, never stored) ---------- */
@@ -221,15 +235,18 @@
   /* ---------- Queries ---------- */
   const desc = (k) => (a, b) => (b[k] || 0) - (a[k] || 0);
   Object.assign(BP.store.q, {
+    /** Filters left undefined are ignored. subsectionId: null means tests with no subtopic. */
     testsFor(cardId, f) {
       f = f || {};
       return S().tests.filter((t) => t.status === 'published' && t.cardId === cardId &&
+        (f.level === undefined || t.level === f.level) &&
         (f.stage === undefined || t.stage === f.stage) && (f.year === undefined || t.year === f.year) &&
-        (f.subjectId === undefined || t.subjectId === f.subjectId) && (f.subsectionId === undefined || t.subsectionId === f.subsectionId))
+        (f.subjectId === undefined || t.subjectId === f.subjectId) &&
+        (f.subsectionId === undefined || (f.subsectionId === null ? !t.subsectionId : t.subsectionId === f.subsectionId)))
         .sort((a, b) => (b.year || 0) - (a.year || 0) || a.title.localeCompare(b.title));
     },
-    yearsWithTests(cardId, stage) {
-      const ys = new Set(BP.store.q.testsFor(cardId, stage ? { stage } : {}).map((t) => t.year).filter(Boolean));
+    yearsWithTests(cardId, f) {
+      const ys = new Set(BP.store.q.testsFor(cardId, f).map((t) => t.year).filter(Boolean));
       return Array.from(ys).sort((a, b) => b - a);
     },
     papersFor(cardId, categoryId, year) {
@@ -259,5 +276,5 @@
   });
 
   BP.content = { TYPES, TYPE_KEYS, LETTERS, find, working, stateOf, titleOf, save, approve, reject, unpublish,
-    questionIssues, validate, cardPath, testPath, caAge, caBucket, isUrl, clone };
+    questionIssues, validate, cardPath, testPath, testListHref, caAge, caBucket, isUrl, clone };
 })();

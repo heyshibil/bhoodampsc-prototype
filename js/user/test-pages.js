@@ -26,7 +26,7 @@
       const neg = t.negativeMarking ? fmt(t.negativeValue) : null;
       const creatorRules = String(t.rules || '').split('\n').map((r) => r.trim()).filter(Boolean);
       return html`
-        ${BP.u.pageHead({ back: backToList(t.cardId), backLabel: card ? card.title : 'Back', crumbs: path, title: t.title })}
+        ${BP.u.pageHead({ back: BP.content.testListHref(t), backLabel: card ? card.title : 'Back', crumbs: path, title: t.title })}
         <div class="rules-layout">
           <div class="stack gap-4">
             <div class="stat-grid stat-grid--4 test-facts" role="group" aria-label="Test overview">
@@ -144,7 +144,7 @@
       const TOPIC_PREVIEW = 8;
       const statTile = (ic, variant, value, sub, label) => html`<div class="rs-stat">${iconTile(ic, variant)}<div class="rs-stat-text"><span class="rs-stat-value t-num">${value}${sub ? html`<small> / ${sub}</small>` : ''}</span><span class="rs-stat-label">${label}</span></div></div>`;
       return html`
-        ${BP.u.pageHead({ back: backToList(s.cardId), backLabel: 'Back to tests', crumbs: s.path, title: s.title, sub: (a.status === 'auto_submitted' ? 'Auto-submitted' : 'Submitted') + ' · ' + BP.ui.fmtRelative(a.submittedAt || a.startedAt) })}
+        ${BP.u.pageHead({ back: test ? BP.content.testListHref(test) : backToList(s.cardId), backLabel: 'Back to tests', crumbs: s.path, title: s.title, sub: (a.status === 'auto_submitted' ? 'Auto-submitted' : 'Submitted') + ' · ' + BP.ui.fmtRelative(a.submittedAt || a.startedAt) })}
         ${autoMsg ? html`<div class="notice notice--warning mb-4" role="status">${icon(a.autoReason === 'away' ? 'wifi-off' : 'clock')}<span><b>Submitted automatically.</b> ${autoMsg}</span></div>` : ''}
         <div class="result-layout">
           <section class="card rs-stats" aria-label="Your performance">

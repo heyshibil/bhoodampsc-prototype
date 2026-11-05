@@ -51,7 +51,7 @@
       }
       return {
         id, cardId,
-        stage: o.stage || null, year: o.year || null, subjectId: o.subject || null, subsectionId: o.sub || null,
+        level: o.level || null, stage: o.stage || null, year: o.year || null, subjectId: o.subject || null, subsectionId: o.sub || null,
         title: o.title, durationMin: o.min || 8, marksPerQuestion: 1,
         negativeMarking: neg, negativeValue: neg ? 1 / 3 : 0, isPremium: !!o.premium,
         rules: RULES,
@@ -69,9 +69,13 @@
     const V = 'cr_vishnu';
 
     const tests = [
-      T('t_upsc_p1', 'card_upsc_psc', { stage: P, title: 'General Studies Prelims · Sample 1', pools: GS, seed: 1 }),
-      T('t_upsc_p2', 'card_upsc_psc', { stage: P, title: 'General Studies Prelims · Sample 2', pools: GS, seed: 2, premium: true, by: V }),
-      T('t_upsc_m1', 'card_upsc_psc', { stage: M, title: 'General Studies Mains · Sample 1', pools: GS, seed: 3, min: 10 }),
+      T('t_upsc_p1', 'card_upsc_psc', { stage: P, subject: 'subj_upsc_gs', sub: 'subsec_upsc_gs_full', title: 'General Studies Prelims · Sample 1', pools: GS, seed: 1 }),
+      T('t_upsc_p2', 'card_upsc_psc', { stage: P, subject: 'subj_upsc_gs', sub: 'subsec_upsc_gs_full', title: 'General Studies Prelims · Sample 2', pools: GS, seed: 2, premium: true, by: V }),
+      T('t_upsc_m1', 'card_upsc_psc', { stage: M, subject: 'subj_upsc_gs', sub: 'subsec_upsc_gs_full', title: 'General Studies Mains · Sample 1', pools: GS, seed: 3, min: 10 }),
+      T('t_upsc_pol1', 'card_upsc_psc', { stage: P, subject: 'subj_upsc_polity', sub: 'subsec_upsc_constitution', title: 'Constitution basics · Sample 1', pools: ['con'], seed: 49, by: V }),
+      T('t_upsc_his1', 'card_upsc_psc', { stage: P, subject: 'subj_upsc_history', sub: 'subsec_upsc_freedom', title: 'Freedom movement · Sample 1', pools: ['fre'], seed: 50 }),
+      T('t_upsc_his2', 'card_upsc_psc', { stage: P, subject: 'subj_upsc_history', sub: 'subsec_upsc_renaissance', title: 'Kerala renaissance · Sample 1', pools: ['ref'], seed: 51, premium: true }),
+      T('t_upsc_his3', 'card_upsc_psc', { stage: M, subject: 'subj_upsc_history', sub: 'subsec_upsc_freedom', title: 'Freedom movement · Mains sample', pools: ['fre'], seed: 52, min: 10, by: V }),
 
       T('t_pyq10_p23', 'card_pyq_10th', { stage: P, year: 2023, title: '10th Level Prelims 2023 · Sample paper', pools: L10, seed: 4 }),
       T('t_pyq10_p22', 'card_pyq_10th', { stage: P, year: 2022, title: '10th Level Prelims 2022 · Sample paper', pools: L10, seed: 5, by: V }),
@@ -88,13 +92,21 @@
       T('t_pyqd_m23', 'card_pyq_degree', { stage: M, year: 2023, title: 'Degree Level Mains 2023 · Sample paper', pools: LD, seed: 13, min: 10, premium: true, by: V }),
       T('t_pyqd_m22', 'card_pyq_degree', { stage: M, year: 2022, title: 'Degree Level Mains 2022 · Sample paper', pools: LD, seed: 14, min: 10 }),
 
-      T('t_sp_p23', 'card_special_topic', { stage: P, year: 2023, title: 'Kerala renaissance · Special topic 2023', pools: ['ref', 'fre'], seed: 15 }),
-      T('t_sp_p22', 'card_special_topic', { stage: P, year: 2022, title: 'Indian Constitution · Special topic 2022', pools: ['con'], seed: 16, premium: true, by: V }),
-      T('t_sp_m23', 'card_special_topic', { stage: M, year: 2023, title: 'General science · Special topic 2023', pools: ['sci'], seed: 17, min: 10, by: V }),
+      T('t_sp_p23', 'card_special_topic', { level: '10th', stage: P, year: 2023, title: 'Kerala renaissance · Special topic 2023', pools: ['ref', 'fre'], seed: 15 }),
+      T('t_sp_10_p22', 'card_special_topic', { level: '10th', stage: P, year: 2022, title: 'General science · Special topic 2022', pools: ['sci'], seed: 43, by: V }),
+      T('t_sp_10_m23', 'card_special_topic', { level: '10th', stage: M, year: 2023, title: 'Kerala geography · Special topic 2023', pools: ['geo'], seed: 45, min: 10 }),
+      T('t_sp_12_p23', 'card_special_topic', { level: '12th', stage: P, year: 2023, title: 'Indian Constitution · Special topic 2023', pools: ['con'], seed: 41, by: V }),
+      T('t_sp_m23', 'card_special_topic', { level: '12th', stage: M, year: 2023, title: 'General science · Special topic 2023', pools: ['sci'], seed: 17, min: 10, by: V }),
+      T('t_sp_d_p23', 'card_special_topic', { level: 'Degree', stage: P, year: 2023, title: 'Freedom movement · Special topic 2023', pools: ['fre'], seed: 42 }),
+      T('t_sp_p22', 'card_special_topic', { level: 'Degree', stage: P, year: 2022, title: 'Indian Constitution · Special topic 2022', pools: ['con'], seed: 16, premium: true, by: V }),
+      T('t_sp_d_m22', 'card_special_topic', { level: 'Degree', stage: M, year: 2022, title: 'Kerala renaissance · Special topic 2022', pools: ['ref'], seed: 44, min: 10, by: V }),
 
-      T('t_sec_p23', 'card_sectional', { stage: P, year: 2023, title: 'Arithmetic · Sectional 2023', pools: ['mat'], seed: 18, min: 6, by: V }),
-      T('t_sec_m23', 'card_sectional', { stage: M, year: 2023, title: 'English grammar · Sectional 2023', pools: ['eng'], seed: 19, min: 6, neg: false }),
-      T('t_sec_p22', 'card_sectional', { stage: P, year: 2022, title: 'General knowledge · Sectional 2022', pools: ['gk', 'geo'], seed: 20, premium: true }),
+      T('t_sec_p23', 'card_sectional', { subject: 'subj_sec_maths', year: 2023, title: 'Arithmetic · Sectional 2023', pools: ['mat'], seed: 18, min: 6, by: V }),
+      T('t_sec_mat22', 'card_sectional', { subject: 'subj_sec_maths', year: 2022, title: 'Arithmetic · Sectional 2022', pools: ['mat'], seed: 46, min: 6 }),
+      T('t_sec_m23', 'card_sectional', { subject: 'subj_sec_english', year: 2023, title: 'English grammar · Sectional 2023', pools: ['eng'], seed: 19, min: 6, neg: false }),
+      T('t_sec_eng22', 'card_sectional', { subject: 'subj_sec_english', year: 2022, title: 'English grammar · Sectional 2022', pools: ['eng'], seed: 47, min: 6, premium: true, by: V }),
+      T('t_sec_gk23', 'card_sectional', { subject: 'subj_sec_gk', year: 2023, title: 'General knowledge · Sectional 2023', pools: ['gk', 'geo'], seed: 48, by: V }),
+      T('t_sec_p22', 'card_sectional', { subject: 'subj_sec_gk', year: 2022, title: 'General knowledge · Sectional 2022', pools: ['gk', 'geo'], seed: 20, premium: true }),
 
       T('t_mock10_p1', 'card_mock_10th', { stage: P, title: 'Mock test 1 · 10th Level Prelims', pools: L10, seed: 21 }),
       T('t_mock10_p2', 'card_mock_10th', { stage: P, title: 'Mock test 2 · 10th Level Prelims', pools: L10, seed: 22, premium: true, by: V }),
@@ -112,14 +124,14 @@
       T('t_top_ref2', 'card_topic', { subject: 'subj_kerala_history', sub: 'subsec_reformers', title: 'Social reformers · Set 2', pools: ['ref'], seed: 31, min: 6, premium: true }),
       T('t_top_fre1', 'card_topic', { subject: 'subj_kerala_history', sub: 'subsec_freedom', title: 'Freedom struggle in Kerala · Set 1', pools: ['fre'], seed: 32, min: 6 }),
       T('t_top_fre2', 'card_topic', { subject: 'subj_kerala_history', sub: 'subsec_freedom', title: 'Freedom struggle in Kerala · Set 2', pools: ['fre'], seed: 33, min: 6 }),
-      T('t_top_con1', 'card_topic', { subject: 'subj_constitution', title: 'Indian Constitution · Set 1', pools: ['con'], seed: 34, min: 6, by: V }),
-      T('t_top_con2', 'card_topic', { subject: 'subj_constitution', title: 'Indian Constitution · Set 2', pools: ['con'], seed: 35, min: 6, premium: true, by: V }),
-      T('t_top_sci1', 'card_topic', { subject: 'subj_science', title: 'General science · Set 1', pools: ['sci'], seed: 36, min: 6, by: V }),
-      T('t_top_sci2', 'card_topic', { subject: 'subj_science', title: 'General science · Set 2', pools: ['sci'], seed: 37, min: 6, neg: false, by: V }),
+      T('t_top_con1', 'card_topic', { subject: 'subj_constitution', sub: 'subsec_con_basics', title: 'Indian Constitution · Set 1', pools: ['con'], seed: 34, min: 6, by: V }),
+      T('t_top_con2', 'card_topic', { subject: 'subj_constitution', sub: 'subsec_con_basics', title: 'Indian Constitution · Set 2', pools: ['con'], seed: 35, min: 6, premium: true, by: V }),
+      T('t_top_sci1', 'card_topic', { subject: 'subj_science', sub: 'subsec_sci_basics', title: 'General science · Set 1', pools: ['sci'], seed: 36, min: 6, by: V }),
+      T('t_top_sci2', 'card_topic', { subject: 'subj_science', sub: 'subsec_sci_basics', title: 'General science · Set 2', pools: ['sci'], seed: 37, min: 6, neg: false, by: V }),
 
       /* Creator work in progress (not visible to users) */
       T('t_cr_draft', 'card_topic', { subject: 'subj_kerala_history', sub: 'subsec_reformers', title: 'Renaissance leaders · Practice set', pools: ['ref'], seed: 38, n: 3, min: 5, status: 'draft', ago: 1 }),
-      T('t_cr_rejected', 'card_special_topic', { stage: P, year: 2023, title: 'Freedom struggle · Special topic 2023', pools: ['fre'], seed: 39, n: 3, min: 5, status: 'rejected', ago: 3,
+      T('t_cr_rejected', 'card_special_topic', { level: '10th', stage: P, year: 2023, title: 'Freedom struggle · Special topic 2023', pools: ['fre'], seed: 39, n: 3, min: 5, status: 'rejected', ago: 3,
         note: 'Question 2: the Malayalam version of option C is incomplete. Please complete it and submit again.' }),
       T('t_cr_submitted', 'card_mock_degree', { stage: M, title: 'Mock test 3 · Degree Level Mains (science and maths)', pools: ['sci', 'mat'], seed: 40, min: 10, status: 'submitted', by: V, ago: 1 }),
     ];
@@ -170,7 +182,7 @@
     ];
 
     /* ---------- Current affairs (sample): dated relative to today so every tab has content ---------- */
-    const CA_DAYS = [0, 0, 1, 2, 4, 6, 9, 15, 26, 35, 40, 52, 62, 70, 85];
+    const CA_DAYS = [0, 0, 1, 2, 4, 6, 9, 15, 26, 35, 40, 52, 62, 70, 85, 11, 20, 45, 78];
     const caQuestions = BP.QBANK.ca.map((q, i) => {
       const id = 'ca_' + (i + 1);
       const submitted = i === BP.QBANK.ca.length - 1;

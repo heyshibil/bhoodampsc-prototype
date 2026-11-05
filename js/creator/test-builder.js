@@ -6,33 +6,37 @@
 
   function blank(card) {
     const s = card.settings || {};
-    return { title: '', stage: s.usesStage ? 'prelims' : null, year: null, subjectId: null, subsectionId: null,
+    return { title: '', level: s.usesLevel ? BP.seed.QUALIFICATIONS[0] : null, stage: s.usesStage ? 'prelims' : null, year: null, subjectId: null, subsectionId: null,
       durationMin: 8, marksPerQuestion: 1, rules: BP.seedContent.RULES, questions: [] };
+  }
+
+  /** Subject select, plus the subject's subtopics when the card uses them. */
+  function subjectFields(w, usesSubtopics) {
+    const f = w.fields, st = BP.store.state;
+    const subjects = st.subjects.filter((s) => s.cardId === w.card.id).sort(byOrder);
+    const subs = usesSubtopics ? st.subsections.filter((x) => x.subjectId === f.subjectId).sort(byOrder) : [];
+    const out = [html`<div class="field"><label class="field-label" for="tb-subject">Subject</label>
+      <select id="tb-subject" class="select" data-act-change="subject"><option value="">Choose a subject</option>${subjects.map((s) => html`<option value="${s.id}" ${f.subjectId === s.id ? 'selected' : ''}>${s.title}</option>`)}</select>
+      ${!subjects.length ? html`<span class="field-help">The admin has not added subjects to this card yet.</span>` : ''}</div>`];
+    if (subs.length) out.push(html`<div class="field"><label class="field-label" for="tb-sub">Subtopic</label>
+      <select id="tb-sub" class="select" data-f="subsectionId"><option value="">Choose a subtopic</option>${subs.map((x) => html`<option value="${x.id}" ${f.subsectionId === x.id ? 'selected' : ''}>${x.title}</option>`)}</select></div>`);
+    return out;
   }
 
   function filtersFor(w) {
     const f = w.fields, card = w.card, st = BP.store.state;
     const out = [];
     if (card.template === 'paper_test') {
+      if (card.settings.usesLevel) out.push(html`<div class="field"><span class="field-label">Education level</span>
+        ${BP.ui.segmented(BP.seed.QUALIFICATIONS.map((l) => ({ value: l, label: l })), f.level, { act: 'level', label: 'Education level' })}</div>`);
       if (card.settings.usesStage) out.push(html`<div class="field"><span class="field-label" id="tb-stage">Exam stage</span>
         ${BP.ui.segmented([{ value: 'prelims', label: 'Prelims' }, { value: 'mains', label: 'Mains' }], f.stage, { act: 'stage', label: 'Exam stage' })}</div>`);
+      if (card.settings.usesSubject) out.push(...subjectFields(w, card.settings.usesSubtopic));
       if (card.settings.usesYear) out.push(html`<div class="field"><label class="field-label" for="tb-year">Year</label>
         <div class="row gap-2"><select id="tb-year" class="select" data-f="year" data-num="1"><option value="">Choose a year</option>${st.years.slice().sort((a, b) => b - a).map((y) => html`<option value="${y}" ${f.year === y ? 'selected' : ''}>${y}</option>`)}</select>
         <button type="button" class="btn btn--secondary shrink-0" data-act="add-year">${icon('plus')}Add year</button></div></div>`);
-      if (card.settings.usesSubject) {
-        const subjects = st.subjects.filter((s) => s.cardId === card.id).sort(byOrder);
-        out.push(html`<div class="field"><label class="field-label" for="tb-subject">Subject</label><select id="tb-subject" class="select" data-f="subjectId"><option value="">Choose a subject</option>${subjects.map((s) => html`<option value="${s.id}" ${f.subjectId === s.id ? 'selected' : ''}>${s.title}</option>`)}</select>${!subjects.length ? html`<span class="field-help">The admin has not added subjects to this card yet.</span>` : ''}</div>`);
-      }
     }
-    if (card.template === 'topic_test') {
-      const subjects = st.subjects.filter((s) => s.cardId === card.id).sort(byOrder);
-      const subs = st.subsections.filter((x) => x.subjectId === f.subjectId).sort(byOrder);
-      out.push(html`<div class="field"><label class="field-label" for="tb-subject">Subject</label>
-        <select id="tb-subject" class="select" data-act-change="subject"><option value="">Choose a subject</option>${subjects.map((s) => html`<option value="${s.id}" ${f.subjectId === s.id ? 'selected' : ''}>${s.title}</option>`)}</select>
-        ${!subjects.length ? html`<span class="field-help">The admin has not added subjects to this card yet.</span>` : ''}</div>`);
-      if (subs.length) out.push(html`<div class="field"><label class="field-label" for="tb-sub">Subsection</label>
-        <select id="tb-sub" class="select" data-f="subsectionId"><option value="">Choose a subsection</option>${subs.map((x) => html`<option value="${x.id}" ${f.subsectionId === x.id ? 'selected' : ''}>${x.title}</option>`)}</select></div>`);
-    }
+    if (card.template === 'topic_test') out.push(...subjectFields(w, true));
     return out;
   }
 
@@ -105,6 +109,7 @@
       if (subj) subj.addEventListener('change', () => { w.fields.subjectId = subj.value || null; w.fields.subsectionId = null; BP.cr.markDirty(w); BP.router.render({ rerender: true }); });
     },
     actions: {
+      level(el) { const w = W(); w.fields.level = el.dataset.value; BP.cr.markDirty(w); el.parentElement.querySelectorAll('.seg').forEach((s) => s.setAttribute('aria-selected', String(s === el))); },
       stage(el) { const w = W(); w.fields.stage = el.dataset.value; BP.cr.markDirty(w); el.parentElement.querySelectorAll('.seg').forEach((s) => s.setAttribute('aria-selected', String(s === el))); },
       'add-year'() { const w = W(); BP.cr.addYear((y) => { w.fields.year = y; BP.cr.markDirty(w); BP.router.render({ rerender: true }); }); },
       'q-add'() {

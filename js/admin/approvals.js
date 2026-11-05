@@ -55,7 +55,7 @@
     }
     if (type === 'caQuestions') {
       const b = BP.content.caBucket(f.publishDate);
-      return html`<dl class="facts card">${fact('Publish date', BP.ui.fmtDate(f.publishDate))}${fact('Subject', f.subject)}${fact('Users will see it in', b === 'scheduled' ? 'Not shown until the publish date' : 'Current Affairs › ' + { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' }[b])}${fact('Access', 'Free (demo default)')}</dl>${questionBlock(f, 1)}`;
+      return html`<dl class="facts card">${fact('Publish date', BP.ui.fmtDate(f.publishDate))}${fact('Topic', f.subject)}${fact('Users will see it in', b === 'scheduled' ? 'Not shown until the publish date' : 'Current Affairs › ' + { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' }[b])}${fact('Access', 'Free (demo default)')}</dl>${questionBlock(f, 1)}`;
     }
     if (type === 'papers') {
       const cat = BP.store.byId('downloadCategories', f.categoryId);

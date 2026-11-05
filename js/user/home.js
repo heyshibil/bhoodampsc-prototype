@@ -22,7 +22,7 @@
     }
   }
 
-  /** Section-themed card. Used on Home and in the Admin card preview. */
+  /** Section-themed card. Used on Home, for Topic Test subjects, and in the Admin card preview. */
   function tile(card, section, opts) {
     opts = opts || {};
     const theme = 'theme-' + BP.themeOf(section);
@@ -36,7 +36,7 @@
       </span>`;
     if (opts.preview) return html`<div class="tile ${theme} ${variant} ${soon ? 'tile--soon' : ''} tile--preview">${inner}</div>`;
     if (soon) return html`<button type="button" class="tile ${theme} ${variant} tile--soon" data-act="soon" data-id="${card.id}">${inner}</button>`;
-    return html`<a class="tile ${theme} ${variant}" href="#/user/card/${card.id}">${inner}</a>`;
+    return html`<a class="tile ${theme} ${variant}" href="${opts.href || '#/user/card/' + card.id}">${inner}</a>`;
   }
   BP.homeTile = tile;
 

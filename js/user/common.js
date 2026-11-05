@@ -80,6 +80,23 @@
     </article>`;
   }
 
+  /** A labelled row of filter chips. items: [{ value, label }]. An empty value means "All". */
+  function filterChips({ id, label, act, items, current }) {
+    return html`<div class="filter-group">
+      <span class="filter-label" id="${id}-label">${label}</span>
+      <div class="chip-row" role="group" aria-labelledby="${id}-label">${items.map((x) => html`<button type="button" class="chip" aria-pressed="${String(String(x.value) === String(current))}" data-act="${act}" data-value="${x.value}">${x.label}</button>`)}</div>
+    </div>`;
+  }
+
+  /** Chip rows scroll sideways on phones: keep the selected chip in view after a re-render. */
+  function showSelectedChips(root) {
+    root.querySelectorAll('.filter-group .chip[aria-pressed="true"]').forEach((chip) => {
+      const row = chip.parentElement;
+      const overflow = chip.getBoundingClientRect().right - row.getBoundingClientRect().right;
+      if (overflow > 0) row.scrollLeft += overflow + 16;
+    });
+  }
+
   /* ---------- Premium (css/premium.css) ---------- */
   /** The premium access action. opts: { act = 'upgrade', title, block, size } */
   const premiumCta = (opts) => {
@@ -102,5 +119,5 @@
     return BP.ui.emptyState({ icon: 'ghost', title: 'This section is not available', text: 'It may have been moved or hidden by the admin.', action: html`<a class="btn btn--secondary" href="#/user/home">${icon('home')}Go to Home</a>` });
   }
 
-  BP.u = { isLocked, accessTag, pageHead, fmtMin, fmtDuration, stageLabel, marksLabel, testMeta, testRow, missingCard, premiumCta, premiumBadge, confirmLogout };
+  BP.u = { isLocked, accessTag, pageHead, fmtMin, fmtDuration, stageLabel, marksLabel, testMeta, testRow, filterChips, showSelectedChips, missingCard, premiumCta, premiumBadge, confirmLogout };
 })();

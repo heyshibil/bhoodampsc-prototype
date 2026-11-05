@@ -103,9 +103,6 @@ a.banner:focus-visible { border-radius: var(--r-md); box-shadow: var(--ring); }
 .month-grid { display: grid; gap: var(--s-3); }
 @media (min-width: 768px) { .month-grid { grid-template-columns: 1fr 1fr; } }
 .month-card { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
-.ca-subject-row { display: flex; gap: var(--s-2); overflow-x: auto; padding: var(--s-1) 0 var(--s-3); margin-top: var(--s-3); scrollbar-width: thin; }
-.ca-subject-row .chip { flex: 0 0 auto; min-height: 44px; cursor: pointer; }
-.ca-subject-row .chip.is-active { background: var(--c-ink); border-color: var(--c-ink); color: var(--c-white); }
 
 /* ---------- Alerts and push ---------- */
 .alert-row.is-unread { border-color: var(--c-border-strong); box-shadow: inset 3px 0 0 var(--c-primary); }

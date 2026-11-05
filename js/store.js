@@ -31,9 +31,16 @@
           }
         }
         // v6 → v7: add the shared topic bank and tag sample questions with topics, in place.
-        if (parsed && parsed.version === 6 && BP.seed.version === 7) {
+        if (parsed && parsed.version === 6) {
           migrateTopics(parsed, fresh());
           parsed.version = 7;
+        }
+        // v7 → v8: new test browsing options and sample data, in place.
+        if (parsed && parsed.version === 7) {
+          migrateBrowsing(parsed, fresh());
+          parsed.version = 8;
+        }
+        if (parsed && parsed.version === BP.seed.version) {
           state = parsed;
           save();
           return;
@@ -42,6 +49,26 @@
     } catch (e) { /* corrupt or blocked storage: fall through to a fresh seed */ }
     state = fresh();
     save();
+  }
+  /** Non-destructive: adds new sample subjects, subtopics and tests, tags seeded tests, turns on the
+      new filters for the three changed cards, and repairs sample questions that had no valid date. */
+  function migrateBrowsing(s, f) {
+    ['subjects', 'subsections', 'tests'].forEach((k) => {
+      f[k].forEach((x) => { if (!s[k].some((y) => y.id === x.id)) s[k].push(x); });
+    });
+    s.tests.forEach((t) => {
+      const ft = f.tests.find((x) => x.id === t.id);
+      if (ft) ['level', 'subjectId', 'subsectionId'].forEach((k) => { if (t[k] == null) t[k] = ft[k]; });
+    });
+    ['card_upsc_psc', 'card_special_topic', 'card_sectional'].forEach((id) => {
+      const c = s.cards.find((x) => x.id === id);
+      const fc = f.cards.find((x) => x.id === id);
+      if (c && fc) c.settings = Object.assign({}, c.settings, fc.settings);
+    });
+    s.caQuestions.forEach((q) => {
+      const fq = f.caQuestions.find((x) => x.id === q.id);
+      if (fq && !/^\d{4}-\d{2}-\d{2}$/.test(q.publishDate)) Object.assign(q, { publishDate: fq.publishDate, createdAt: fq.createdAt, updatedAt: fq.updatedAt });
+    });
   }
   /** Non-destructive: copies the topic bank, the card switch and question topic tags from a fresh seed. */
   function migrateTopics(s, f) {
@@ -101,19 +128,21 @@
   BP.TEMPLATES = {
     paper_test: {
       label: 'Paper Test',
-      description: 'Optional Prelims / Mains, Year and Subject filters, then a test list.',
+      description: 'Optional Education level, Prelims / Mains, Subject, Subtopic and Year filters, then a test list.',
       settings: [
+        { key: 'usesLevel', label: 'Uses Education level (10th, 12th, Degree)' },
         { key: 'usesStage', label: 'Uses Prelims / Mains' },
-        { key: 'usesYear', label: 'Uses Year' },
         { key: 'usesSubject', label: 'Uses Subject' },
+        { key: 'usesSubtopic', label: 'Uses Subtopic', requires: 'usesSubject' },
+        { key: 'usesYear', label: 'Uses Year' },
         { key: 'usesTopics', label: 'Topic-wise analysis' },
       ],
       creates: 'test',
     },
-    topic_test: { label: 'Topic Test', description: 'Subject, then subsection if any, then a test list.', settings: [{ key: 'usesTopics', label: 'Topic-wise analysis' }], creates: 'test' },
+    topic_test: { label: 'Topic Test', description: 'Subject cards, then subtopics if any, then a test list.', settings: [{ key: 'usesTopics', label: 'Topic-wise analysis' }], creates: 'test' },
     notification: { label: 'Notification', description: 'Application and Exam tabs, list, detail page.', settings: [], creates: 'notice' },
     paper_download: { label: 'Paper Download', description: 'Category, then year, then papers to download.', settings: [], creates: 'paper' },
-    current_affairs: { label: 'Current Affairs', description: 'Daily, Weekly and Monthly practice, sorted by date.', settings: [{ key: 'usesSubject', label: 'Show monthly subject filters' }], creates: 'ca' },
+    current_affairs: { label: 'Current Affairs', description: 'Daily, Weekly and Monthly practice. Monthly opens by month, then topic.', settings: [{ key: 'usesSubject', label: 'Show monthly topic filters' }], creates: 'ca' },
   };
 
   /* ---------- Section colour themes (css/components.css .theme-*) ---------- */

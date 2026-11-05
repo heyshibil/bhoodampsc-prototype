@@ -130,7 +130,7 @@
             <div class="field"><span class="field-label">Where users will see it today</span><p class="t-body" id="ca-where">${where ? (bucket === 'scheduled' ? 'Scheduled: ' + where : 'Current Affairs › ' + where) : '–'}</p></div>
           </div>
           <p class="t-caption">Questions move from Daily to Weekly to Monthly on their own: days 0–6, days 7–27, then day 28 onward.</p>`)}
-          ${w.card.settings.usesSubject ? BP.cr.card('Monthly subject', html`<div class="field"><label class="field-label" for="ca-subject">Subject</label><input id="ca-subject" class="input" data-f="subject" value="${f.subject || ''}" placeholder="For example: Art, Malayalam, English or GK"><span class="field-help">Users see this subject as a filter in Monthly.</span></div>`) : ''}
+          ${w.card.settings.usesSubject ? BP.cr.card('Monthly topic', html`<div class="field"><label class="field-label" for="ca-subject">Topic</label><input id="ca-subject" class="input" data-f="subject" value="${f.subject || ''}" placeholder="For example: Art, Malayalam, English or GK"><span class="field-help">Users see this as a topic filter when they open a month in Monthly.</span></div>`) : ''}
           ${BP.cr.card('Question', BP.qeditor.form(f, 'caq'))}
           <div id="form-errors"></div>
         </div>${BP.cr.actionBar(w)}`;

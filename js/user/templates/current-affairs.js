@@ -1,4 +1,5 @@
 /* Flow template: Current Affairs. Card -> Daily / Weekly / Monthly -> practice.
+   Monthly opens in steps: months -> a month's topic filters -> the tests for that month and topic.
    The bucket is worked out from each question's publish date (BP.content.caBucket); nothing is stored. */
 (function () {
   const BP = (window.BP = window.BP || {});
@@ -10,16 +11,32 @@
   const monthKey = (d) => String(d).slice(0, 7);
   const periodText = (tab) => ({ daily: 'Today and the previous six days', weekly: 'Published 7 to 27 days ago', monthly: 'Published 28 or more days ago' }[tab]);
   const weekLabel = (date) => 'Week ' + Math.ceil(Number(String(date).slice(8, 10)) / 7) + ' ' + BP.ui.fmtMonth(String(date).slice(0, 7) + '-01');
+  const questionCount = (n) => n + (n === 1 ? ' question' : ' questions');
+  const topicsIn = (items) => Array.from(new Set(items.map((x) => x.q.subject).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+
+  /** A month's page: topic filters, then only the tests for that month and topic. */
+  function monthPage(card, section, ctx, month, items) {
+    const topics = card.settings.usesSubject ? topicsIn(items) : [];
+    const active = topics.includes(ctx.query.subject) ? ctx.query.subject : '';
+    const practiceHref = (topic) => BP.router.href('/user/practice/' + card.id, { bucket: 'monthly', month, subject: topic });
+    const testCard = (title, n, topic) => html`<div class="month-card">
+      ${iconTile(topic ? 'newspaper' : 'archive', 'accent')}
+      <div class="grow"><h2 class="t-h3">${title}</h2><p class="t-caption">${questionCount(n)}</p></div>
+      <a class="btn btn--secondary btn--sm" href="${practiceHref(topic)}" aria-label="Practise ${title}">Practise${icon('arrow-right')}</a>
+    </div>`;
+    const inTopic = (topic) => items.filter((x) => x.q.subject === topic).length;
+    return html`${BP.u.pageHead({ back: '#/user/card/' + card.id + '?tab=monthly', backLabel: 'Monthly', crumbs: [section.title, card.title], title: BP.ui.fmtMonth(month + '-01'), sub: 'Free practice' })}
+      ${topics.length ? html`<div class="filters">${BP.u.filterChips({ id: 'ca-topic', label: 'Topic', act: 'subject', items: [{ value: '', label: 'All' }].concat(topics.map((t) => ({ value: t, label: t }))), current: active })}</div>` : ''}
+      <div class="month-grid">${active ? testCard(active, inTopic(active), active)
+        : html`${testCard(topics.length ? 'All topics' : 'All questions', items.length, '')}${topics.map((t) => testCard(t, inTopic(t), t))}`}</div>`;
+  }
 
   BP.templates = BP.templates || {};
   BP.templates.current_affairs = {
     render(card, section, ctx) {
       const tab = TABS.some((t) => t.value === ctx.query.tab) ? ctx.query.tab : 'daily';
       const all = BP.store.q.caFor(card.id);
-      const tabItems = all.filter((x) => x.bucket === tab);
-      const subjects = Array.from(new Set(tabItems.map((x) => x.q.subject).filter(Boolean))).sort((a, b) => a.localeCompare(b));
-      const activeSubject = tab === 'monthly' && card.settings.usesSubject && subjects.includes(ctx.query.subject) ? ctx.query.subject : '';
-      const inTab = tabItems.filter((x) => !activeSubject || x.q.subject === activeSubject);
+      const inTab = all.filter((x) => x.bucket === tab);
       const lang = BP.store.state.session.lang;
       const head = html`${BP.u.pageHead({ back: '#/user/home', backLabel: 'Home', crumbs: [section.title], title: card.title })}
         <div class="filters">${BP.ui.segmented(TABS.map((t) => ({ value: t.value, label: t.label, count: all.filter((x) => x.bucket === t.value).length })), tab, { act: 'tab', label: 'Period', size: 'fit' })}
@@ -27,16 +44,17 @@
       if (!inTab.length) return html`${head}${BP.ui.emptyState({ icon: 'newspaper', title: 'No questions here yet', text: 'New current affairs questions appear here every day.' })}`;
 
       if (tab === 'monthly') {
-        const subjectRow = card.settings.usesSubject && subjects.length ? html`<div class="ca-subject-row" aria-label="Filter monthly questions by subject">
-          <button type="button" class="chip ${activeSubject ? '' : 'is-active'}" data-act="subject" data-value="">All subjects</button>
-          ${subjects.map((subject) => html`<button type="button" class="chip ${activeSubject === subject ? 'is-active' : ''}" data-act="subject" data-value="${subject}">${subject}</button>`)}</div>` : '';
         const groups = {};
         inTab.forEach((x) => { (groups[monthKey(x.q.publishDate)] = groups[monthKey(x.q.publishDate)] || []).push(x); });
-        return html`${head}${subjectRow}<div class="month-grid">${Object.keys(groups).sort().reverse().map((k) => html`<div class="month-card">
-          ${iconTile('archive', 'accent')}
-          <div class="grow"><h2 class="t-h3">${BP.ui.fmtMonth(k + '-01')}</h2><p class="t-caption">${groups[k].length} ${groups[k].length === 1 ? 'question' : 'questions'}${activeSubject ? ' · ' + activeSubject : ''}</p></div>
-          <a class="btn btn--secondary btn--sm" href="#/user/practice/${card.id}?bucket=monthly&month=${k}${activeSubject ? '&subject=' + encodeURIComponent(activeSubject) : ''}">Practise${icon('arrow-right')}</a>
-        </div>`)}</div>`;
+        if (groups[ctx.query.month]) return monthPage(card, section, ctx, ctx.query.month, groups[ctx.query.month]);
+        return html`${head}<div class="month-grid">${Object.keys(groups).sort().reverse().map((k) => {
+          const topics = card.settings.usesSubject ? topicsIn(groups[k]) : [];
+          return html`<a class="list-row" href="#/user/card/${card.id}?tab=monthly&month=${k}">
+            ${iconTile('archive', 'accent')}
+            <span class="lr-main"><span class="lr-title">${BP.ui.fmtMonth(k + '-01')}</span><span class="lr-meta">${questionCount(groups[k].length)}${topics.length ? ' · ' + topics.length + (topics.length === 1 ? ' topic' : ' topics') : ''}</span></span>
+            ${raw(BP.icon('chevron-right', 'chev'))}
+          </a>`;
+        })}</div>`;
       }
 
       if (tab === 'weekly') {
@@ -58,15 +76,21 @@
           <span class="lr-main"><span class="lr-title" ${raw(lang === 'ml' ? 'lang="ml"' : '')}>${x.q[lang].text}</span><span class="lr-meta">Published ${BP.ui.fmtDate(x.q.publishDate)}${x.q.sample ? ' · Sample' : ''}</span></span>
         </div>`)}</div>`;
     },
+    mount(root) { BP.u.showSelectedChips(root); },
     actions: {
       tab(el, e, ctx) { BP.router.go(ctx.path, { tab: el.dataset.value }, { replace: true }); },
-      subject(el, e, ctx) { BP.router.go(ctx.path, { tab: 'monthly', subject: el.dataset.value || undefined }, { replace: true }); },
+      subject(el, e, ctx) { BP.router.go(ctx.path, { tab: 'monthly', month: ctx.query.month, subject: el.dataset.value }, { replace: true }); },
     },
   };
 
   /* ---------- Practice: one question at a time, answer shown straight after choosing ---------- */
   let P = null; // { key, ids[], index, chosen{} }
 
+  /** Where practice returns to: the month and topic it came from, or its period tab. */
+  function practiceBackHref(ctx) {
+    const query = ctx.query.month ? { tab: 'monthly', month: ctx.query.month, subject: ctx.query.subject } : { tab: ctx.query.bucket };
+    return BP.router.href('/user/card/' + ctx.params.cardId, query);
+  }
   function practiceKey(ctx) { return ctx.params.cardId + '|' + (ctx.query.bucket || '') + '|' + (ctx.query.month || '') + '|' + (ctx.query.week || '') + '|' + (ctx.query.subject || ''); }
   function questionsFor(ctx) {
     const all = BP.store.q.caFor(ctx.params.cardId);
@@ -89,7 +113,7 @@
         <p class="t-body t-muted">You got <b class="t-strong">${right} of ${qs.length}</b> right.</p>
         <div class="row-wrap gap-3 justify-center">
           <button type="button" class="btn btn--secondary" data-act="again">${icon('refresh')}Practise again</button>
-          <a class="btn btn--primary" href="#/user/card/${ctx.params.cardId}${ctx.query.month ? '?tab=past' : ctx.query.bucket ? '?tab=' + ctx.query.bucket : ''}">Back to current affairs</a>
+          <a class="btn btn--primary" href="${practiceBackHref(ctx)}">Back to current affairs</a>
         </div>
       </div>`;
     }
@@ -120,10 +144,10 @@
     render(ctx) {
       if (!P || P.key !== practiceKey(ctx)) P = { key: practiceKey(ctx), ids: questionsFor(ctx).map((q) => q.id), index: 0, chosen: {} };
       const lang = BP.store.state.session.lang;
-      const label = ctx.query.month ? BP.ui.fmtMonth(ctx.query.month + '-01') : ctx.query.week || (TABS.find((t) => t.value === ctx.query.bucket) || TABS[0]).label + ' practice';
+      const label = ctx.query.month ? BP.ui.fmtMonth(ctx.query.month + '-01') + (ctx.query.subject ? ' · ' + ctx.query.subject : '') : ctx.query.week || (TABS.find((t) => t.value === ctx.query.bucket) || TABS[0]).label + ' practice';
       return html`<div class="ts ts--practice">
         <header class="ts-top">
-          <a class="icon-btn" href="#/user/card/${ctx.params.cardId}" aria-label="Close practice">${icon('x')}</a>
+          <a class="icon-btn" href="${practiceBackHref(ctx)}" aria-label="Close practice">${icon('x')}</a>
           <div class="ts-title"><span class="t-h3 truncate">${label}</span><span class="t-caption">Free practice · not timed</span></div>
           ${BP.ui.segmented([{ value: 'en', label: 'EN' }, { value: 'ml', label: raw('<span lang="ml">മല</span>') }], lang, { act: 'lang', label: 'Question language', size: 'sm' })}
         </header>
